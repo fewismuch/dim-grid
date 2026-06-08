@@ -1,0 +1,249 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #fff;
+  min-height: 100vh;
+}
+
+:root {
+  --dsg-selection-border-color: #00b96b;
+  --color-primary: #00b96b;
+  --color-text: #1f2329;
+  --color-text-secondary: #646a73;
+  --color-text-muted: #8f959e;
+  --color-text-placeholder: #c9cdd4;
+  --color-border: #e5e6eb;
+  --color-bg-hover: #f7f8fa;
+  --color-bg-active: #e8f8f0;
+  --color-bg-input-hover: #f2f3f5;
+  --color-danger: #f54a45;
+  --color-danger-bg: #fff0f0;
+}
+
+/* ── Shared toolbar button ── */
+.tb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #646a73;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.1s;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.tb-btn:hover {
+  background: #f2f3f5;
+  color: #1f2329;
+}
+.tb-btn.active {
+  background: #e8f8f0;
+  color: #00b96b;
+}
+
+/* ── Select tag (global for group header badges) ── */
+.select-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ── Column header ── */
+.col-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  overflow: hidden;
+  padding: 0 2px;
+  justify-content: space-between;
+}
+.col-header-label-box {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.col-header-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.add-col-th-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #8f959e;
+}
+.add-col-th-btn:hover {
+  color: #00b96b;
+  background: #eef9f4;
+}
+
+/* ── Group header ── */
+.group-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #f7f8fa;
+  border-bottom: 1px solid #e5e6eb;
+  font-size: 12px;
+  color: #646a73;
+  cursor: pointer;
+  user-select: none;
+}
+.group-header-row:hover {
+  background: #eef9f4;
+}
+.group-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 12px;
+}
+.group-badge-default {
+  background: #f2f3f5;
+  color: #646a73;
+}
+
+/* ── Add row ── */
+.add-row-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: #8f959e;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  width: 100%;
+}
+.add-row-btn:hover {
+  background: #f7f8fa;
+  color: #1f2329;
+}
+
+/* ── Link cell ── */
+.link-cell {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  padding: 0 4px;
+}
+.link-cell-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: #1f2329;
+}
+.link-cell-btn,
+.link-cell-open {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #8f959e;
+  border-radius: 4px;
+  flex-shrink: 0;
+  padding: 0;
+}
+.link-cell:hover .link-cell-btn,
+.link-cell:hover .link-cell-open {
+  display: flex;
+}
+.link-cell-btn:hover,
+.link-cell-open:hover {
+  background: #e5e6eb;
+  color: #1f2329;
+}
+.link-cell-open {
+  color: #00b96b;
+}
+
+/* ── Gutter drag handle ── */
+.dsg-gutter-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
+.dsg-gutter-index {
+  color: #8f959e;
+  line-height: 1;
+}
+.dsg-gutter-grip {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  color: #8f959e;
+  cursor: grab;
+  z-index: 2;
+}
+.dsg-gutter-grip:hover {
+  color: #1f2329;
+}
+.dsg-gutter-cell:hover .dsg-gutter-index {
+  display: none;
+}
+.dsg-gutter-cell:hover .dsg-gutter-grip {
+  display: flex;
+}
+.dsg-gutter-grip:active {
+  cursor: grabbing;
+}
+
+/* ── Drag indicator ── */
+.dsg-drag-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #00b96b;
+  z-index: 20;
+  pointer-events: none;
+  transition: top 0.05s ease;
+}
+
+/* ── Duplicate highlight ── */
+.dsg-cell-dupe {
+  background: #fff0f0;
+}
+
+.dsg-cell-header-container {
+  width: 100%;
+}

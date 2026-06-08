@@ -1,0 +1,30 @@
+.panel {
+  min-width: 280px;
+  max-width: 380px;
+}
+.panelTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: 12px;
+}
+
+.selectRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.selectLabel {
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  font-size: 13px;
+}
+.fieldSelect {
+  flex: 1;
+}
+
+.btnRow {
+  display: flex;
+  gap: 6px;
+}

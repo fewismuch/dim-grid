@@ -1,0 +1,116 @@
+.cellFull {
+  width: 100%;
+  height: 100%;
+}
+.cellFullNoPointer {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.cellPadding {
+  padding: 0 8px;
+}
+
+/* Select tag */
+.selectTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  background: var(--tag-bg);
+  color: var(--tag-color);
+}
+.selectTagRound {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 99px;
+  font-size: 12px;
+  background: var(--tag-bg);
+  color: var(--tag-color);
+}
+.selectTagSmall {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 99px;
+  font-size: 11px;
+  white-space: nowrap;
+  line-height: 20px;
+  background: var(--tag-bg);
+  color: var(--tag-color);
+}
+.selectPlaceholder {
+  color: var(--color-text-placeholder);
+  font-size: 12px;
+}
+
+/* Option dot */
+.optionDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--dot-bg);
+  display: inline-block;
+}
+
+/* Date cell */
+.dateCell {
+  padding: 0 8px;
+  font-size: 13px;
+}
+.dateCellEmpty {
+  color: var(--color-text-placeholder);
+}
+.dateCellValue {
+  color: var(--color-text);
+}
+
+/* Rating */
+.ratingCell {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.ratingCellNoPointer {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  pointer-events: none;
+}
+.ratingInner {
+  font-size: 16px;
+  padding: 0 6px;
+}
+
+/* Progress */
+.progressCell {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 8px;
+  width: 100%;
+}
+.progressBar {
+  flex: 1;
+  margin-bottom: 0;
+}
+.progressPercent {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  min-width: 28px;
+}
+.progressInput {
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0 8px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+/* Link cell */
+.linkCellPlaceholder {
+  color: var(--color-text-placeholder);
+  font-size: 12px;
+}

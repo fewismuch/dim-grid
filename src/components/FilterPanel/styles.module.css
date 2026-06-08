@@ -1,0 +1,36 @@
+.panel {
+  min-width: 340px;
+  max-width: 440px;
+}
+.panelTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: 12px;
+}
+.emptyHint {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.fieldSelect {
+  flex: 1;
+}
+.opSelect {
+  width: 90px;
+  flex: none;
+}
+.valueInput {
+  width: 100px;
+}
+
+.addLink {
+  padding: 0;
+}
