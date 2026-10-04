@@ -17,7 +17,6 @@ export default function GroupPanel({ fields, groupBy, onChange, onSortAsc, onSor
 
   const content = (
     <div className={s.panel}>
-      <div className={s.panelTitle}>分组</div>
       <div className={s.selectRow}>
         <span className={s.selectLabel}>按列分组</span>
         <Select

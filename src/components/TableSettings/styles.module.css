@@ -2,13 +2,6 @@
   min-width: 240px;
   max-width: 320px;
 }
-.panelHeader {
-  font-size: 14px;
-  color: var(--color-text);
-  padding: 0 14px 8px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid var(--color-border-secondary);
-}
 .emptyHint {
   color: var(--color-icon);
   font-size: 13px;

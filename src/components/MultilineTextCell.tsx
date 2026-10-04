@@ -10,7 +10,8 @@ export default function MultilineTextCell({
   focus,
   active,
   fieldId,
-}: CellProps<RowData, unknown> & { fieldId: string }) {
+  visibleLines,
+}: CellProps<RowData, unknown> & { fieldId: string; visibleLines: 1 | 2 | 5 }) {
   const value = String(rowData[fieldId] ?? '')
   const firstLine = value.split(/\r?\n/, 1)[0]
   const hasMoreLines = /\r?\n/.test(value)
@@ -86,16 +87,20 @@ export default function MultilineTextCell({
         }
       }}
     />
-  ) : active && hasMoreLines ? (
+  ) : active && hasMoreLines && visibleLines === 1 ? (
     <div data-multiline-expanded="true" className={s.multilineExpandedWrap}>
       <span className={s.multilineExpanded}>{value}</span>
       {/* 复刻 DSG 的扩行把手，放到展开框右下角；保留其 className 以复用拖拽扩行逻辑 */}
       <span data-multiline-handle className={`dsg-expand-rows-indicator ${s.multilineExpandedHandle}`} />
     </div>
   ) : (
-    <span className={s.multilineDisplay} title={value}>
-      {firstLine}
-      {hasMoreLines && '…'}
+    <span
+      className={visibleLines === 1 ? s.multilineDisplay : s.multilineDisplayWrapped}
+      style={visibleLines === 1 ? undefined : { WebkitLineClamp: visibleLines }}
+      title={value}
+    >
+      {visibleLines === 1 ? firstLine : value}
+      {visibleLines === 1 && hasMoreLines && '…'}
     </span>
   )
 }

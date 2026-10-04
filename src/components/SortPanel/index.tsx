@@ -17,7 +17,6 @@ export default function SortPanel({ fields, sorts, onAdd, onUpdate, onDelete }: 
 
   const content = (
     <div className={style.panel}>
-      <div className={style.panelTitle}>排序</div>
       {sorts.length === 0 && <div className={style.emptyHint}>暂无排序条件</div>}
       {sorts.map((s) => (
         <div key={s.id} className={style.row}>

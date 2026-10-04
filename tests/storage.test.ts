@@ -25,8 +25,17 @@ test('versioned storage round trip preserves dates, IDs, field order and complet
   doc.view.highlightDupes.add('f1')
   doc.view.colStats.f2 = '已填写数'
   doc.view.pinnedFieldId = 'f2'
+  doc.view.rowHeight = 'high'
   doc.fields[0].width = 60
   assert.deepEqual(deserializeDocument(serializeDocument(doc)), doc)
+})
+
+test('older backups default to low row height and saved choices round trip', () => {
+  const legacy = JSON.parse(serializeDocument(initialDocument()))
+  delete legacy.view.rowHeight
+  assert.equal(deserializeDocument(JSON.stringify(legacy)).view.rowHeight, 'low')
+  legacy.view.rowHeight = 'medium'
+  assert.equal(deserializeDocument(JSON.stringify(legacy)).view.rowHeight, 'medium')
 })
 
 test('structured values use arrays and objects on disk and legacy adapters in memory', () => {
@@ -40,6 +49,16 @@ test('structured values use arrays and objects on disk and legacy adapters in me
   assert.deepEqual(JSON.parse(encoded).rows[0].multi, ['甲', '乙'])
   assert.equal(JSON.parse(encoded).rows[0].link.text, '网站')
   assert.deepEqual(deserializeDocument(encoded), doc)
+})
+
+test('cell text colors survive backup and invalid colors are rejected', () => {
+  const doc = initialDocument()
+  doc.rows[0].__cellColors = { f1: '#fa8c16' }
+  const encoded = serializeDocument(doc)
+  assert.deepEqual(deserializeDocument(encoded), doc)
+  const invalid = JSON.parse(encoded)
+  invalid.rows[0].__cellColors.f1 = 'url(javascript:alert(1))'
+  assert.throws(() => deserializeDocument(JSON.stringify(invalid)))
 })
 
 test('automatic time fields retain exact instants in backups', () => {

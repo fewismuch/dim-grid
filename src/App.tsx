@@ -1,6 +1,10 @@
 import { Alert, Button, Flex } from 'antd'
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { type Column, DynamicDataSheetGrid as DataSheetGrid } from 'react-datasheet-grid'
+import {
+  type Column,
+  type ContextMenuComponentProps,
+  DynamicDataSheetGrid as DataSheetGrid,
+} from 'react-datasheet-grid'
 import 'react-datasheet-grid/dist/style.css'
 import s from './App.module.css'
 import buildDsgCol from './buildDsgCol'
@@ -9,6 +13,7 @@ import ColumnMenu from './components/ColumnMenu'
 import { ContextMenu } from './components/ContextMenu'
 import FilterPanel from './components/FilterPanel/index'
 import GroupPanel from './components/GroupPanel/index'
+import RowHeightMenu from './components/RowHeightMenu'
 import SearchPanel from './components/SearchPanel/index'
 import SortPanel from './components/SortPanel/index'
 import StatsMenu from './components/StatsMenu/index'
@@ -33,6 +38,7 @@ import useGroupWindow from './hooks/useGroupWindow'
 import useTableDocument from './hooks/useTableDocument'
 import { newField } from './model/document'
 import { groupGridHeight } from './model/groupWindow'
+import { ROW_HEIGHT } from './model/rowHeight'
 import { cellText, createRow, duplicateRow, duplicateValues, processRows } from './model/table'
 
 const FieldModal = lazy(() => import('./components/FieldModal'))
@@ -40,7 +46,9 @@ const FieldModal = lazy(() => import('./components/FieldModal'))
 export default function App() {
   const { document: table, execute, setView, saveError, recoveryRaw, replaceDocument } = useTableDocument()
   const { fields, rows } = table
-  const { filters, groupBy, sorts, colStats, hiddenFields, highlightDupes, pinnedFieldId } = table.view
+  const { filters, groupBy, sorts, colStats, hiddenFields, highlightDupes, pinnedFieldId, rowHeight } = table.view
+  const rowPixels = ROW_HEIGHT[rowHeight].pixels
+  const visibleLines = ROW_HEIGHT[rowHeight].lines
   const [modal, setModal] = useState<ModalState | null>(null)
   const [search, setSearch] = useState('')
   const [statsMenu, setStatsMenu] = useState<string | null>(null)
@@ -197,7 +205,7 @@ export default function App() {
 
   useEffect(() => {
     if (!isDragging) return
-    const rowH = 36
+    const rowH = rowPixels
     const headerH = 38
     const onMove = (e: MouseEvent) => {
       const el = gridAreaRef.current
@@ -230,7 +238,7 @@ export default function App() {
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseup', onUp)
     }
-  }, [isDragging, moveRow])
+  }, [isDragging, moveRow, rowPixels])
 
   const openAdd = useCallback(() => setModal({ mode: 'add' }), [])
   const openEdit = useCallback((fieldId: string) => setModal({ mode: 'edit', fieldId }), [])
@@ -272,7 +280,7 @@ export default function App() {
     return [...map.entries()].map(([key, rows]) => ({ key, rows }))
   }, [processedRows, groupBy.fieldId, fields])
 
-  const groupRange = useGroupWindow(groups, groupBy.collapsed, gridAreaRef)
+  const groupRange = useGroupWindow(groups, groupBy.collapsed, gridAreaRef, rowPixels)
 
   const toggleGroup = (key: string) =>
     setGroupBy((g) => {
@@ -343,57 +351,68 @@ export default function App() {
   )
 
   const dsgColumns = useMemo(() => {
-    const buildFieldColumn = (field: FieldDef): Partial<Column<RowData>> => ({
-      ...buildDsgCol(field),
-      headerClassName: field.id === pinnedField?.id ? 'dsg-cell-pinned-left' : undefined,
-      cellClassName: field.id === pinnedField?.id ? 'dsg-cell-pinned-left' : undefined,
-      basis: columnPreview[field.id] ?? field.width ?? (field.type === 'checkbox' ? 80 : 180),
-      grow: 0,
-      shrink: 0,
-      minWidth: 60,
-      title: (
-        <div className="col-header">
-          <span className="col-header-label-box">
-            {React.createElement(FIELD_TYPES.find((f) => f.key === field.type)?.Icon || Ic.Text)}
-            <span className="col-header-label">{field.label}</span>
-          </span>
-          {renderFieldMenu(field)}
-          <button
-            type="button"
-            className="col-resize-handle"
-            aria-label={`调整${field.label}列宽`}
-            title="拖动调整列宽，方向键微调"
-            onPointerDown={(event) => {
-              if (event.button !== 0) return
-              event.preventDefault()
-              event.stopPropagation()
-              resizeDrag.current = {
-                id: field.id,
-                startX: event.clientX,
-                startWidth: event.currentTarget.closest('.dsg-cell-header')?.getBoundingClientRect().width ?? 140,
-                preview: event.currentTarget.closest('.dsg-cell-header')?.getBoundingClientRect().width ?? 140,
-                min: 60,
-              }
-              setResizingColumnId(field.id)
-            }}
-            onMouseDown={(event) => event.stopPropagation()}
-            onKeyDown={(event) => {
-              if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
-              event.preventDefault()
-              event.stopPropagation()
-              const current = event.currentTarget.closest('.dsg-cell-header')?.getBoundingClientRect().width ?? 140
-              execute({
-                type: 'field/resize',
-                id: field.id,
-                width: Math.min(1200, Math.max(60, Math.round(current + (event.key === 'ArrowRight' ? 16 : -16)))),
-              })
-            }}
-          />
-        </div>
-      ),
-    })
+    const buildFieldColumn = (field: FieldDef): Partial<Column<RowData>> => {
+      const column = buildDsgCol(field, visibleLines)
+      const Cell = column.component
+      return {
+        ...column,
+        component: Cell
+          ? (props) => (
+              <div style={{ display: 'contents', color: props.rowData.__cellColors?.[field.id] }}>
+                <Cell {...props} />
+              </div>
+            )
+          : undefined,
+        headerClassName: field.id === pinnedField?.id ? 'dsg-cell-pinned-left' : undefined,
+        cellClassName: field.id === pinnedField?.id ? 'dsg-cell-pinned-left' : undefined,
+        basis: columnPreview[field.id] ?? field.width ?? (field.type === 'checkbox' ? 80 : 180),
+        grow: 0,
+        shrink: 0,
+        minWidth: 60,
+        title: (
+          <div className="col-header">
+            <span className="col-header-label-box">
+              {React.createElement(FIELD_TYPES.find((f) => f.key === field.type)?.Icon || Ic.Text)}
+              <span className="col-header-label">{field.label}</span>
+            </span>
+            {renderFieldMenu(field)}
+            <button
+              type="button"
+              className="col-resize-handle"
+              aria-label={`调整${field.label}列宽`}
+              title="拖动调整列宽，方向键微调"
+              onPointerDown={(event) => {
+                if (event.button !== 0) return
+                event.preventDefault()
+                event.stopPropagation()
+                resizeDrag.current = {
+                  id: field.id,
+                  startX: event.clientX,
+                  startWidth: event.currentTarget.closest('.dsg-cell-header')?.getBoundingClientRect().width ?? 140,
+                  preview: event.currentTarget.closest('.dsg-cell-header')?.getBoundingClientRect().width ?? 140,
+                  min: 60,
+                }
+                setResizingColumnId(field.id)
+              }}
+              onMouseDown={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+                event.preventDefault()
+                event.stopPropagation()
+                const current = event.currentTarget.closest('.dsg-cell-header')?.getBoundingClientRect().width ?? 140
+                execute({
+                  type: 'field/resize',
+                  id: field.id,
+                  width: Math.min(1200, Math.max(60, Math.round(current + (event.key === 'ArrowRight' ? 16 : -16)))),
+                })
+              }}
+            />
+          </div>
+        ),
+      }
+    }
     return orderedFields.map((field) => buildFieldColumn(field))
-  }, [orderedFields, pinnedField, columnPreview, renderFieldMenu, execute])
+  }, [orderedFields, pinnedField, columnPreview, renderFieldMenu, execute, visibleLines])
 
   const addColumn = useMemo<Partial<Column<RowData>>>(
     () => ({
@@ -429,6 +448,22 @@ export default function App() {
     [openAdd],
   )
   const gridColumns = useMemo(() => [...dsgColumns, addColumn], [dsgColumns, addColumn])
+
+  const renderContextMenu = (viewRows: RowData[]) => (props: ContextMenuComponentProps) => {
+    const row = viewRows[props.cursorIndex.row]
+    const field = orderedFields[props.cursorIndex.col]
+    return (
+      <ContextMenu
+        {...props}
+        textColor={row?.__cellColors?.[field?.id] ?? null}
+        onTextColorChange={
+          row && field
+            ? (color) => execute({ type: 'cell/text-color', rowId: row.id, fieldId: field.id, color })
+            : undefined
+        }
+      />
+    )
+  }
 
   const gutterColumn = useMemo(
     () => ({
@@ -502,6 +537,7 @@ export default function App() {
             onTogglePin={togglePin}
             renderMenu={(field) => renderFieldMenu(field, true)}
           />
+          <RowHeightMenu value={rowHeight} onChange={(value) => setView('rowHeight', value)} />
 
           <FilterPanel
             fields={fields}
@@ -562,7 +598,7 @@ export default function App() {
         {isDragging && (
           <div
             className="dsg-drag-indicator"
-            style={{ top: 38 + (dragOverIndex >= dragFromRef.current ? dragOverIndex + 1 : dragOverIndex) * 36 }}
+            style={{ top: 38 + (dragOverIndex >= dragFromRef.current ? dragOverIndex + 1 : dragOverIndex) * rowPixels }}
           />
         )}
         {groups ? (
@@ -583,18 +619,18 @@ export default function App() {
                 </Button>
                 {!groupBy.collapsed.has(key) && (
                   <DataSheetGrid
-                    height={groupGridHeight(gRows.length, groupRange.gridMaxHeight)}
+                    height={groupGridHeight(gRows.length, groupRange.gridMaxHeight, rowPixels)}
                     value={gRows}
                     onChange={(newRows) => handleGridChange(gRows, newRows)}
                     rowKey="id"
                     createRow={() => ({ ...makeRow(), [groupBy.fieldId]: gRows[0][groupBy.fieldId] })}
                     duplicateRow={({ rowData }) => duplicateRow(rowData)}
-                    contextMenuComponent={ContextMenu}
+                    contextMenuComponent={renderContextMenu(gRows)}
                     columns={gridColumns}
                     cellClassName={getCellClass}
                     gutterColumn={gutterColumn}
                     addRowsComponent={false}
-                    rowHeight={36}
+                    rowHeight={rowPixels}
                     headerRowHeight={groupBy.collapsed.has(key) ? 0 : 38}
                   />
                 )}
@@ -614,9 +650,9 @@ export default function App() {
             cellClassName={getCellClass}
             gutterColumn={gutterColumn}
             addRowsComponent={false}
-            rowHeight={36}
+            rowHeight={rowPixels}
             headerRowHeight={38}
-            contextMenuComponent={ContextMenu}
+            contextMenuComponent={renderContextMenu(processedRows)}
           />
         )}
         {processedRows.length === 0 && (

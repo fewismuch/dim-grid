@@ -117,7 +117,6 @@ export default function TableSettings({
     >
       <SortableContext items={fields.map((f: FieldDef) => f.id)} strategy={verticalListSortingStrategy}>
         <div className={s.panelPopover}>
-          <div className={s.panelHeader}>表格设置</div>
           {fields.length === 0 && <div className={s.emptyHint}>暂无列</div>}
           {fields.map((field: FieldDef) => (
             <DraggableField

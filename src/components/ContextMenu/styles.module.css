@@ -1,0 +1,43 @@
+.paletteItem {
+  padding: 2px;
+  cursor: default;
+}
+
+.palette {
+  display: grid;
+  grid-template-columns: repeat(6, 18px);
+  gap: 4px 6px;
+  padding: 2px;
+}
+
+.swatch {
+  width: 18px;
+  height: 18px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #262626;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.swatch:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.reset {
+  position: relative;
+  background: #fff;
+  border-color: var(--color-border);
+}
+
+.reset::after {
+  content: "";
+  position: absolute;
+  width: 17px;
+  height: 2px;
+  top: 7px;
+  left: 0;
+  background: #e64965;
+  transform: rotate(-45deg);
+}

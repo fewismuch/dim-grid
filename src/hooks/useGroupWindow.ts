@@ -6,12 +6,13 @@ export default function useGroupWindow(
   groups: { key: string; rows: unknown[] }[] | null,
   collapsed: Set<string>,
   container: RefObject<HTMLDivElement>,
+  rowHeight: number,
 ) {
   const [viewport, setViewport] = useState({ top: 0, height: 600 })
   const gridMaxHeight = Math.max(100, viewport.height - 36)
   const offsets = useMemo(
-    () => groupOffsets(groups ?? [], collapsed, gridMaxHeight),
-    [groups, collapsed, gridMaxHeight],
+    () => groupOffsets(groups ?? [], collapsed, gridMaxHeight, rowHeight),
+    [groups, collapsed, gridMaxHeight, rowHeight],
   )
   useEffect(() => {
     const element = container.current

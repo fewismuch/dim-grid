@@ -222,7 +222,7 @@ function ProgressCell({
   )
 }
 
-export default function buildDsgCol(field: FieldDef): Partial<Column<RowData>> {
+export default function buildDsgCol(field: FieldDef, visibleLines: 1 | 2 | 5 = 1): Partial<Column<RowData>> {
   const common = {
     id: field.id,
     title: field.label,
@@ -413,7 +413,7 @@ export default function buildDsgCol(field: FieldDef): Partial<Column<RowData>> {
       return {
         ...scalarColumn(field.id, textColumn),
         ...common,
-        component: (props) => <MultilineTextCell {...props} fieldId={field.id} />,
+        component: (props) => <MultilineTextCell {...props} fieldId={field.id} visibleLines={visibleLines} />,
         pasteValue: ({ rowData, value }) => ({ ...rowData, [field.id]: String(value ?? '') }),
         deleteValue: ({ rowData }) => ({ ...rowData, [field.id]: '' }),
       }

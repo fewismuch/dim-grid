@@ -17,6 +17,16 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.multilineDisplayWrapped {
+  display: -webkit-box;
+  width: 100%;
+  padding: 0 8px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  -webkit-box-orient: vertical;
+  line-height: 20px;
+}
 .multilineExpandedWrap {
   position: absolute;
   top: 0;
@@ -34,7 +44,7 @@
   border: solid var(--dsg-selection-border-width) var(--dsg-selection-border-color);
   border-radius: var(--dsg-selection-border-radius);
   background: var(--color-bg);
-  color: var(--color-text);
+  color: inherit;
   font: inherit;
   line-height: 20px;
   white-space: pre-wrap;
@@ -54,7 +64,7 @@
   padding: 7px 8px;
   border: 0;
   background: transparent;
-  color: var(--color-text);
+  color: inherit;
   font: inherit;
   line-height: 20px;
   resize: none;
@@ -72,7 +82,7 @@
   padding: 7px 8px;
   border: 1px solid var(--color-primary);
   background: var(--color-bg);
-  color: var(--color-text);
+  color: inherit;
   font: inherit;
   line-height: 20px;
   resize: none;
@@ -131,7 +141,7 @@
   color: var(--color-text-placeholder);
 }
 .dateCellValue {
-  color: var(--color-text);
+  color: inherit;
 }
 
 /* Rating */

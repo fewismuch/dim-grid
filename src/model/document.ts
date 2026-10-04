@@ -1,8 +1,10 @@
+import type { RowHeight } from './rowHeight.ts'
 import type { FieldDef, FilterItem, GroupByState, RowData, SortItem } from './table.ts'
 import { convertValue, defaultValue, isTimestampField, newId, reconcileRows } from './table.ts'
 
 export interface TableView {
   name: string
+  rowHeight: RowHeight
   pinnedFieldId: string
   filters: FilterItem[]
   sorts: SortItem[]
@@ -18,6 +20,7 @@ export interface TableDocument {
 }
 export const emptyView = (): TableView => ({
   name: '表格视图',
+  rowHeight: 'low',
   pinnedFieldId: '',
   filters: [],
   sorts: [],
@@ -59,6 +62,7 @@ export type TableCommand =
   | { type: 'rows/change'; before: RowData[]; after: RowData[] }
   | { type: 'rows/add'; row: RowData }
   | { type: 'rows/move'; from: number; to: number }
+  | { type: 'cell/text-color'; rowId: string; fieldId: string; color: string | null }
   | { type: 'view/change'; update: (view: TableView) => TableView }
 
 function withNewTimestamps(row: RowData, fields: FieldDef[], now: string): RowData {
@@ -114,6 +118,11 @@ export function applyCommand(doc: TableDocument, command: TableCommand): TableDo
         rows: doc.rows.map((row) => {
           const next = { ...row }
           delete next[id]
+          if (next.__cellColors?.[id]) {
+            const colors = { ...next.__cellColors }
+            delete colors[id]
+            next.__cellColors = Object.keys(colors).length ? colors : undefined
+          }
           return next
         }),
         view: {
@@ -139,7 +148,17 @@ export function applyCommand(doc: TableDocument, command: TableCommand): TableDo
         label: `${source.label} 副本`,
         options: source.options?.map((option) => ({ ...option })),
       })
-      return { ...doc, fields, rows: doc.rows.map((row) => ({ ...row, [command.newId]: row[command.id] })) }
+      return {
+        ...doc,
+        fields,
+        rows: doc.rows.map((row) => ({
+          ...row,
+          [command.newId]: row[command.id],
+          ...(row.__cellColors?.[command.id]
+            ? { __cellColors: { ...row.__cellColors, [command.newId]: row.__cellColors[command.id] } }
+            : {}),
+        })),
+      }
     }
     case 'field/reorder':
       return { ...doc, fields: command.fields }
@@ -188,6 +207,20 @@ export function applyCommand(doc: TableDocument, command: TableCommand): TableDo
       const [row] = rows.splice(from, 1)
       rows.splice(to, 0, row)
       return { ...doc, rows }
+    }
+    case 'cell/text-color': {
+      if (!doc.fields.some((field) => field.id === command.fieldId)) return doc
+      const row = doc.rows.find((item) => item.id === command.rowId)
+      if (!row || (row.__cellColors?.[command.fieldId] ?? null) === command.color) return doc
+      const colors = { ...row.__cellColors }
+      if (command.color) colors[command.fieldId] = command.color
+      else delete colors[command.fieldId]
+      return {
+        ...doc,
+        rows: doc.rows.map((item) =>
+          item === row ? { ...item, __cellColors: Object.keys(colors).length ? colors : undefined } : item,
+        ),
+      }
     }
     case 'view/change':
       return { ...doc, view: command.update(doc.view) }

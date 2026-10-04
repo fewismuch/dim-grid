@@ -41,6 +41,18 @@ test('column resize is undoable without altering its cells', () => {
   assert.deepEqual(historyReducer(resized, { type: 'undo' }).present, doc)
 })
 
+test('text color changes only the selected cell and can be reset and undone', () => {
+  const doc = initialDocument()
+  const colored = commit(historyState(doc), { type: 'cell/text-color', rowId: 'r1', fieldId: 'f1', color: '#fa8c16' })
+  assert.equal(colored.present.rows[0].__cellColors.f1, '#fa8c16')
+  assert.equal(colored.present.rows[1], doc.rows[1])
+  assert.equal(colored.present.rows[0].f1, '任务 A')
+  assert.deepEqual(historyReducer(colored, { type: 'undo' }).present, doc)
+  const reset = commit(colored, { type: 'cell/text-color', rowId: 'r1', fieldId: 'f1', color: null })
+  assert.equal(reset.present.rows[0].__cellColors, undefined)
+  assert.deepEqual(historyReducer(reset, { type: 'undo' }).present, colored.present)
+})
+
 test('editing field metadata keeps row references, while option renames update only affected rows', () => {
   const doc = initialDocument()
   const renamed = applyCommand(doc, { type: 'field/save', field: { ...doc.fields[0], label: '标题' } })

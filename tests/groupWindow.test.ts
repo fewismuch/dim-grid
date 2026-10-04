@@ -32,6 +32,12 @@ test('group grids use the available viewport height before scrolling', () => {
   assert.equal(groupOffsets([{ key: 'a', rows: Array(20).fill({}) }], new Set(), 700)[1], 734)
 })
 
+test('group grid offsets follow the selected row height', () => {
+  assert.equal(groupGridHeight(2, 700, 56), 151)
+  assert.equal(groupGridHeight(2, 700, 116), 271)
+  assert.equal(groupOffsets([{ key: 'a', rows: [{}, {}] }], new Set(), 700, 56)[1], 185)
+})
+
 test('bulk paste merges 10000 new records in order without shifting existing hidden records', () => {
   const hidden = { id: 'hidden' }
   const existing = { id: 'existing' }

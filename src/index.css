@@ -127,7 +127,7 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 14px;
-  color: var(--color-text);
+  color: inherit;
 }
 .link-cell-btn,
 .link-cell-open {

@@ -28,6 +28,7 @@ export interface FieldDef {
 }
 export interface RowData {
   id: string
+  __cellColors?: Record<string, string>
   [key: string]: unknown
 }
 export interface SortItem {

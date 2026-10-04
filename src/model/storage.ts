@@ -20,7 +20,7 @@ const fieldTypes = new Set([
   'created_time',
   'modified_time',
 ])
-const reserved = new Set(['id', '__proto__', 'prototype', 'constructor'])
+const reserved = new Set(['id', '__cellColors', '__proto__', 'prototype', 'constructor'])
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
 const fail = (): never => {
@@ -36,6 +36,7 @@ export function serializeDocument(doc: TableDocument): string {
     rows: doc.rows.map((row) =>
       Object.fromEntries([
         ['id', row.id],
+        ...(row.__cellColors ? [['__cellColors', row.__cellColors]] : []),
         ...doc.fields.map((field) => {
           const value = row[field.id]
           return [
@@ -119,6 +120,15 @@ export function deserializeDocument(raw: string): TableDocument {
     if (rowIds.has(id)) return fail()
     rowIds.add(id)
     const row: RowData = { id }
+    if (source.__cellColors !== undefined) {
+      if (!record(source.__cellColors)) return fail()
+      const colors: Record<string, string> = {}
+      for (const [fieldId, color] of Object.entries(source.__cellColors)) {
+        if (!ids.has(fieldId) || typeof color !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(color)) return fail()
+        colors[fieldId] = color
+      }
+      if (Object.keys(colors).length) row.__cellColors = colors
+    }
     for (const field of fields) {
       const value = source[field.id] ?? defaultValue(field.type)
       if (field.type === 'date') {
@@ -166,6 +176,8 @@ export function deserializeDocument(raw: string): TableDocument {
   const view = emptyView()
   const saved = record(data.view) ? data.view : {}
   if (typeof saved.name === 'string' && saved.name.trim()) view.name = saved.name.trim().slice(0, 60)
+  if (saved.rowHeight === 'low' || saved.rowHeight === 'medium' || saved.rowHeight === 'high')
+    view.rowHeight = saved.rowHeight
   view.pinnedFieldId =
     typeof saved.pinnedFieldId === 'string' && ids.has(saved.pinnedFieldId) ? saved.pinnedFieldId : ''
   view.hiddenFields = new Set(strings(saved.hiddenFields).filter((id) => ids.has(id)))

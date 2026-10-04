@@ -4,12 +4,6 @@
   min-width: min(280px, calc(100vw - 48px));
   max-width: min(380px, calc(100vw - 48px));
 }
-.panelTitle {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
-  margin-bottom: 12px;
-}
 
 .selectRow {
   display: flex;

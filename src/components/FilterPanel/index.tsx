@@ -26,7 +26,6 @@ export default function FilterPanel({ fields, filters, onAdd, onUpdate, onDelete
 
   const content = (
     <div className={s.panel}>
-      <div className={s.panelTitle}>筛选</div>
       {filters.length === 0 && <div className={s.emptyHint}>暂无筛选条件</div>}
       {filters.map((f) => (
         <div key={f.id} className={s.row}>

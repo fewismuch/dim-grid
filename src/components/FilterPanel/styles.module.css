@@ -4,12 +4,6 @@
   min-width: min(340px, calc(100vw - 48px));
   max-width: min(440px, calc(100vw - 48px));
 }
-.panelTitle {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
-  margin-bottom: 12px;
-}
 .emptyHint {
   color: var(--color-text-muted);
   font-size: 13px;

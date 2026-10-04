@@ -1,16 +1,18 @@
 export const GROUP_HEADER_HEIGHT = 34
-export const groupGridHeight = (count: number, maxHeight = 400): number => Math.min(maxHeight, 38 + count * 36 + 1)
+export const groupGridHeight = (count: number, maxHeight = 400, rowHeight = 36): number =>
+  Math.min(maxHeight, 38 + count * rowHeight + 1)
 export function groupOffsets(
   groups: { key: string; rows: unknown[] }[],
   collapsed: Set<string>,
   maxGridHeight = 400,
+  rowHeight = 36,
 ): number[] {
   const offsets = [0]
   for (const group of groups)
     offsets.push(
       offsets[offsets.length - 1] +
         GROUP_HEADER_HEIGHT +
-        (collapsed.has(group.key) ? 0 : groupGridHeight(group.rows.length, maxGridHeight)),
+        (collapsed.has(group.key) ? 0 : groupGridHeight(group.rows.length, maxGridHeight, rowHeight)),
     )
   return offsets
 }
