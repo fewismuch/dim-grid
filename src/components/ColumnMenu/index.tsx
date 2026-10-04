@@ -1,21 +1,8 @@
 import { ArrowDownOutlined, ArrowUpOutlined, CopyOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import { Button, Dropdown } from 'antd'
-import { createStyles } from 'antd-style'
-import { useCallback } from 'react'
 import { Ic } from '../../constants'
-
-const useStyles = createStyles(() => ({
-  colMenu: {
-    display: 'flex',
-    alignItems: 'center',
-    opacity: 0,
-    marginLeft: 'auto',
-    '.dsg-cell-header:hover &': {
-      opacity: 1,
-    },
-  },
-}))
+import styles from './styles.module.css'
 
 interface Props {
   fieldId: string
@@ -43,8 +30,6 @@ export default function ColumnMenu({
   onToggleHighlight,
   onDelete,
 }: Props) {
-  const { styles } = useStyles()
-
   const items: MenuProps['items'] = [
     { key: 'edit', label: '编辑列', icon: <Ic.Edit />, onClick: onEdit },
     { key: 'duplicate', label: '复制列', icon: <CopyOutlined style={{ fontSize: 13 }} />, onClick: onDuplicate },
@@ -72,23 +57,16 @@ export default function ColumnMenu({
     { key: 'delete', label: '删除列', icon: <Ic.Trash />, onClick: onDelete, danger: true },
   ]
 
-  const renderItem = useCallback((item: any) => {
-    if (item.type === 'divider') return { type: 'divider' as const }
-    return {
-      key: item.key,
-      icon: item.icon,
-      label: item.label,
-      danger: item.danger,
-      onClick: item.onClick,
-    }
-  }, [])
-
-  const menuItems: MenuProps['items'] = items.map(renderItem)
-
   return (
-    <div className={styles.colMenu} onMouseDown={(e) => e.stopPropagation()}>
-      <Dropdown menu={{ items: menuItems }} trigger={['click']} placement="bottomRight">
-        <Button size="small" type="text" style={{ color: 'inherit' }}>
+    <div className={styles.colMenu}>
+      <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+        <Button
+          onMouseDown={(e) => e.stopPropagation()}
+          aria-label="列操作"
+          size="small"
+          type="text"
+          style={{ color: 'inherit' }}
+        >
           <Ic.Settings />
         </Button>
       </Dropdown>

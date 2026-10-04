@@ -1,8 +1,11 @@
 import * as React from 'react'
-import { type FC, useCallback, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import type { ContextMenuComponentProps, ContextMenuItem } from 'react-datasheet-grid'
 
-const useDocumentEventListener = (type: string, listener: (...args: any[]) => void) => {
+const useDocumentEventListener = <K extends keyof DocumentEventMap>(
+  type: K,
+  listener: (event: DocumentEventMap[K]) => void,
+) => {
   React.useEffect(() => {
     document.addEventListener(type, listener)
 
@@ -59,7 +62,7 @@ export const defaultRenderItem = (item: ContextMenuItem) => {
 export const createContextMenuComponent =
   (renderItem: (item: ContextMenuItem) => JSX.Element = defaultRenderItem) =>
   // eslint-disable-next-line react/display-name
-  ({ clientX, clientY, items, close }) => {
+  ({ clientX, clientY, items, close }: ContextMenuComponentProps) => {
     const containerRef = useRef<HTMLDivElement>(null)
 
     const onClickOutside = useCallback(
@@ -73,13 +76,30 @@ export const createContextMenuComponent =
       [close],
     )
     useDocumentEventListener('mousedown', onClickOutside)
+    useDocumentEventListener(
+      'keydown',
+      useCallback(
+        (event: KeyboardEvent) => {
+          if (event.key === 'Escape') close()
+        },
+        [close],
+      ),
+    )
 
     return (
       <div className="dsg-context-menu" style={{ left: `${clientX}px`, top: `${clientY}px` }} ref={containerRef}>
         {items.map((item) => (
-          <div key={item.type} onClick={item.action} className="dsg-context-menu-item">
+          <button
+            type="button"
+            key={item.type}
+            onClick={() => {
+              item.action()
+              close()
+            }}
+            className="dsg-context-menu-item"
+          >
             {renderItem(item)}
-          </div>
+          </button>
         ))}
       </div>
     )

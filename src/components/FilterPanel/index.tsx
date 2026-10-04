@@ -50,10 +50,10 @@ export default function FilterPanel({ fields, filters, onAdd, onUpdate, onDelete
               placeholder="输入值"
             />
           )}
-          <Button type="text" danger icon={<Ic.X />} onClick={() => onDelete(f.id)} />
+          <Button type="text" danger aria-label="删除条件" icon={<Ic.X />} onClick={() => onDelete(f.id)} />
         </div>
       ))}
-      <Button type="link" className={s.addLink} onClick={onAdd}>
+      <Button type="link" className={s.addLink} onClick={onAdd} disabled={!fields.length}>
         <Ic.Plus />
         添加筛选条件
       </Button>
@@ -62,7 +62,7 @@ export default function FilterPanel({ fields, filters, onAdd, onUpdate, onDelete
 
   return (
     <Popover open={open} onOpenChange={setOpen} content={content} trigger="click" placement="bottomLeft">
-      <button className={`tb-btn ${activeCount ? 'active' : ''}`}>
+      <button type="button" className={`tb-btn ${activeCount ? 'active' : ''}`}>
         <Ic.Filter />
         筛选{activeCount > 0 && ` (${activeCount})`}
       </button>

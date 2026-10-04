@@ -1,6 +1,8 @@
 .panel {
-  min-width: 340px;
-  max-width: 440px;
+  max-height: 60vh;
+  overflow-y: auto;
+  min-width: min(340px, calc(100vw - 48px));
+  max-width: min(440px, calc(100vw - 48px));
 }
 .panelTitle {
   font-size: 14px;
@@ -21,6 +23,7 @@
   margin-bottom: 8px;
 }
 .fieldSelect {
+  min-width: 0;
   flex: 1;
 }
 .opSelect {
@@ -33,4 +36,17 @@
 
 .addLink {
   padding: 0;
+}
+
+@media (max-width: 420px) {
+  .row {
+    flex-wrap: wrap;
+  }
+  .fieldSelect {
+    flex-basis: 45%;
+  }
+  .valueInput {
+    flex: 1;
+    min-width: 0;
+  }
 }

@@ -247,3 +247,48 @@ body {
 .dsg-cell-header-container {
   width: 100%;
 }
+
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.group-header-row {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  font-family: inherit;
+}
+.dsg-context-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
+.link-cell:focus-within .link-cell-btn,
+.link-cell:focus-within .link-cell-open {
+  display: flex;
+}
+.dsg-gutter-grip {
+  border: 0;
+  background: transparent;
+}
+.dsg-gutter-cell:focus-within .dsg-gutter-grip {
+  display: flex;
+}
+.link-cell-active .link-cell-btn,
+.link-cell-active .link-cell-open {
+  display: flex;
+}
+@media (hover: none) {
+  .link-cell-btn,
+  .link-cell-open {
+    display: flex;
+  }
+}
+.group-header-row {
+  height: 34px;
+}

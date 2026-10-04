@@ -1,4 +1,4 @@
-import { closestCenter, DndContext, DragOverlay } from '@dnd-kit/core'
+import { closestCenter, DndContext, type DragEndEvent, DragOverlay, type DragStartEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Popover } from 'antd'
 import { useCallback, useState } from 'react'
@@ -22,7 +22,7 @@ function DraggableField({ field, hidden, onToggle }: DraggableFieldProps) {
 
   return (
     <div ref={setNodeRef} className={`${s.row}${hidden ? ` ${s.rowHidden}` : ''}`} style={style}>
-      <button className={s.dragHandle} {...listeners} {...attributes} tabIndex={-1}>
+      <button type="button" aria-label={`移动 ${field.label}`} className={s.dragHandle} {...listeners} {...attributes}>
         <Ic.GripVertical />
       </button>
       <span className={s.fieldName}>
@@ -32,6 +32,7 @@ function DraggableField({ field, hidden, onToggle }: DraggableFieldProps) {
         })()} {field.label}
       </span>
       <button
+        type="button"
         className={s.visBtn}
         onClick={(e) => {
           e.stopPropagation()
@@ -56,12 +57,12 @@ export default function TableSettings({ fields, hiddenFields, onReorder, onToggl
   const [open, setOpen] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
 
-  const handleDragStart = useCallback((event: any) => {
-    setActiveId(event.active.id)
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(String(event.active.id))
   }, [])
 
   const handleDragEnd = useCallback(
-    (event: any) => {
+    (event: DragEndEvent) => {
       setActiveId(null)
       const { active, over } = event
       if (!over || active.id === over.id) return
@@ -76,7 +77,12 @@ export default function TableSettings({ fields, hiddenFields, onReorder, onToggl
   const activeField = activeId ? fields.find((f: FieldDef) => f.id === activeId) : null
 
   const content = (
-    <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
       <SortableContext items={fields.map((f: FieldDef) => f.id)} strategy={verticalListSortingStrategy}>
         <div className={s.panelPopover}>
           <div className={s.panelHeader}>表格设置</div>
@@ -107,7 +113,7 @@ export default function TableSettings({ fields, hiddenFields, onReorder, onToggl
 
   return (
     <Popover open={open} onOpenChange={setOpen} content={content} trigger="click" placement="bottomLeft">
-      <button className={`tb-btn ${open ? 'active' : ''}`}>
+      <button type="button" className={`tb-btn ${open ? 'active' : ''}`}>
         <Ic.Settings />
         表格设置
       </button>

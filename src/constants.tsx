@@ -1,6 +1,4 @@
 import {
-  ArrowDownOutlined,
-  ArrowUpOutlined,
   BarChartOutlined,
   BlockOutlined,
   CalendarOutlined,
@@ -29,45 +27,19 @@ import {
 } from '@ant-design/icons'
 import type { FC } from 'react'
 
-export interface FieldOption {
-  label: string
-  color: string
-  textColor: string
-}
+export type {
+  FieldDef,
+  FieldOption,
+  FieldType,
+  FilterItem,
+  GroupByState,
+  ModalState,
+  RowData,
+  SortItem,
+} from './model/table'
+export { calcStat, newId } from './model/table'
 
-export interface FieldDef {
-  id: string
-  label: string
-  type: string
-  options?: FieldOption[]
-}
-
-export interface RowData {
-  [key: string]: unknown
-}
-
-export interface SortItem {
-  id: string
-  fieldId: string
-  dir: 'asc' | 'desc'
-}
-
-export interface FilterItem {
-  id: string
-  fieldId: string
-  op: string
-  value: string
-}
-
-export interface GroupByState {
-  fieldId: string
-  collapsed: Set<string>
-}
-
-export interface ModalState {
-  mode: 'add' | 'edit'
-  fieldId?: string
-}
+import type { FieldType } from './model/table'
 
 const iconStyle = (size: number) => ({ fontSize: size })
 
@@ -102,7 +74,7 @@ export const Ic: Record<string, IconComponent> = {
 }
 
 export interface FieldTypeDef {
-  key: string
+  key: FieldType
   label: string
   Icon: IconComponent
   section: string
@@ -167,8 +139,6 @@ export const OPT_TEXT_COLORS = [
   '#fff',
 ]
 
-export const newId = (): string => `f_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-
 export const STAT_OPTS = [
   '不展示',
   '记录总数',
@@ -179,30 +149,3 @@ export const STAT_OPTS = [
   '未填写占比',
   '唯一数占比',
 ]
-
-export function calcStat(stat: string, rows: RowData[], fieldId: string): number | string | null {
-  if (stat === '不展示') return null
-  const vals = rows.map((r) => r[fieldId])
-  const filled = vals.filter((v) => v !== undefined && v !== null && v !== '' && v !== false)
-  const unique = new Set(filled.map((v) => String(v))).size
-  const total = vals.length
-  const pct = (v: number): string => (total ? `${Math.round((v / total) * 100)}%` : '0%')
-  switch (stat) {
-    case '记录总数':
-      return total
-    case '已填写数':
-      return filled.length
-    case '未填写数':
-      return total - filled.length
-    case '唯一数':
-      return unique
-    case '已填写占比':
-      return pct(filled.length)
-    case '未填写占比':
-      return pct(total - filled.length)
-    case '唯一数占比':
-      return pct(unique)
-    default:
-      return null
-  }
-}

@@ -1,6 +1,8 @@
 .panel {
-  min-width: 300px;
-  max-width: 400px;
+  max-height: 60vh;
+  overflow-y: auto;
+  min-width: min(300px, calc(100vw - 48px));
+  max-width: min(400px, calc(100vw - 48px));
 }
 .panelTitle {
   font-size: 14px;
@@ -21,6 +23,7 @@
   margin-bottom: 8px;
 }
 .fieldSelect {
+  min-width: 0;
   flex: 1;
 }
 .dirSelect {

@@ -28,10 +28,10 @@ export default function GroupPanel({ fields, groupBy, onChange, onSortAsc, onSor
         />
       </div>
       <div className={s.btnRow}>
-        <Button size="small" onClick={onSortAsc}>
+        <Button size="small" disabled={!groupBy.fieldId} onClick={onSortAsc}>
           升序
         </Button>
-        <Button size="small" onClick={onSortDesc}>
+        <Button size="small" disabled={!groupBy.fieldId} onClick={onSortDesc}>
           降序
         </Button>
       </div>
@@ -40,7 +40,7 @@ export default function GroupPanel({ fields, groupBy, onChange, onSortAsc, onSor
 
   return (
     <Popover open={open} onOpenChange={setOpen} content={content} trigger="click" placement="bottomLeft">
-      <button className={`tb-btn ${groupBy.fieldId ? 'active' : ''}`}>
+      <button type="button" className={`tb-btn ${groupBy.fieldId ? 'active' : ''}`}>
         <Ic.Group />
         分组{groupBy.fieldId && ` · ${groupField?.label}`}
       </button>

@@ -1,25 +1,7 @@
 import { Button, Input, Popover } from 'antd'
-import { createStyles } from 'antd-style'
 import { useState } from 'react'
-
-const useStyles = createStyles(({ token }) => ({
-  content: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-    minWidth: 260,
-  },
-  fieldLabel: {
-    marginBottom: 4,
-    fontSize: 12,
-    color: token.colorTextSecondary,
-  },
-  actions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: 8,
-  },
-}))
+import { safeLink } from '../../model/table'
+import styles from './styles.module.css'
 
 interface Props {
   text: string
@@ -29,13 +11,14 @@ interface Props {
 }
 
 export default function LinkPopup({ text: initialText, link: initialLink, onSave, children }: Props) {
-  const { styles } = useStyles()
+  const [error, setError] = useState('')
   const [open, setOpen] = useState(false)
   const [text, setText] = useState(initialText)
   const [link, setLink] = useState(initialLink)
 
   const handleOpenChange = (visible: boolean) => {
     if (visible) {
+      setError('')
       setText(initialText)
       setLink(initialLink)
     }
@@ -46,17 +29,31 @@ export default function LinkPopup({ text: initialText, link: initialLink, onSave
     <div className={styles.content}>
       <div>
         <div className={styles.fieldLabel}>文本</div>
-        <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="显示文本（可选）" autoFocus />
+        <Input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          aria-label="显示文本"
+          placeholder="显示文本（可选）"
+        />
       </div>
       <div>
         <div className={styles.fieldLabel}>链接</div>
-        <Input value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://..." />
+        <Input value={link} onChange={(e) => setLink(e.target.value)} aria-label="链接地址" placeholder="https://..." />
       </div>
+      {error && (
+        <div role="alert" style={{ color: 'var(--color-danger)' }}>
+          {error}
+        </div>
+      )}
       <div className={styles.actions}>
         <Button onClick={() => setOpen(false)}>取消</Button>
         <Button
           type="primary"
           onClick={() => {
+            if (link.trim() && !safeLink(link.trim())) {
+              setError('请输入有效的 http、https 或 mailto 链接')
+              return
+            }
             onSave({ text: text.trim(), link: link.trim() })
             setOpen(false)
           }}

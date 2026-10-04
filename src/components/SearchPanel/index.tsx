@@ -1,22 +1,17 @@
-import { Input } from 'antd'
-import { createStyles } from 'antd-style'
+import { Input, type InputRef } from 'antd'
 import type { ChangeEvent } from 'react'
 import { useCallback, useRef, useState } from 'react'
 import { Ic } from '../../constants'
-
-const useStyles = createStyles(() => ({
-  searchInput: { width: 200, height: 28, marginLeft: 4 },
-}))
+import styles from './styles.module.css'
 
 interface Props {
   onSearch: (query: string) => void
 }
 
 export default function SearchPanel({ onSearch }: Props) {
-  const { styles } = useStyles()
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState('')
-  const inputRef = useRef<any>(null)
+  const inputRef = useRef<InputRef>(null)
 
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -57,7 +52,11 @@ export default function SearchPanel({ onSearch }: Props) {
             if (!value) setOpen(false)
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Escape') setOpen(false)
+            if (e.key === 'Escape') {
+              setValue('')
+              onSearch('')
+              setOpen(false)
+            }
           }}
           allowClear
           prefix={<Ic.Search />}

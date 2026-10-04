@@ -1,20 +1,26 @@
-import { Button, DatePicker, Progress, Rate, Select } from 'antd'
-import type { Dayjs } from 'dayjs'
+import { Button, Progress, Rate, Select } from 'antd'
 import dayjs from 'dayjs'
-import React, { useLayoutEffect, useRef } from 'react'
-import type { CellProps } from 'react-datasheet-grid'
+import React, { lazy, Suspense, useLayoutEffect, useRef } from 'react'
+import type { CellProps, Column } from 'react-datasheet-grid'
 import { checkboxColumn, createTextColumn, floatColumn, intColumn, keyColumn, textColumn } from 'react-datasheet-grid'
 import s from './buildDsgCol.module.css'
 import LinkPopup from './components/LinkPopup'
-import { type FieldDef, type FieldOption, Ic } from './constants'
+import { type FieldDef, type FieldOption, Ic, type RowData } from './constants'
+import { cellText, isEmptyValue, normalizeEmail, parseLinkValue, parseMultiValue, safeLink } from './model/table'
+
+// Field descriptors choose the scalar type; rows have dynamic keys, so adapt that
+// boundary once while keeping all grid callbacks typed as whole records.
+function scalarColumn<T>(fieldId: string, column: Partial<Column<T>>) {
+  return keyColumn<RowData>(fieldId, column as Partial<Column<unknown>>)
+}
 
 /* ── Select cell component (antd Select) ── */
 
 type SelectColData = { options: FieldOption[]; fieldId: string }
 
 const SelectCell = React.memo(
-  ({ active, rowData, setRowData, focus, stopEditing, columnData }: CellProps<any, SelectColData>) => {
-    const ref = useRef<any>(null)
+  ({ active, rowData, setRowData, focus, stopEditing, columnData }: CellProps<RowData, SelectColData>) => {
+    const ref = useRef<React.ComponentRef<typeof Select>>(null)
     const { options, fieldId } = columnData
     const value = (rowData?.[fieldId] || undefined) as string | undefined
 
@@ -32,8 +38,9 @@ const SelectCell = React.memo(
           ref={ref}
           open={focus}
           value={value}
+          allowClear
           onChange={(val) => {
-            setRowData({ ...rowData, [fieldId]: val })
+            setRowData({ ...rowData, [fieldId]: val ?? '' })
           }}
           onBlur={() => stopEditing({ nextRow: false })}
           getPopupContainer={() => document.body}
@@ -52,9 +59,9 @@ const SelectCell = React.memo(
               </span>
             ),
           }))}
-          labelRender={(props: any) => {
+          labelRender={(props) => {
             const o = options.find((x) => x.label === props.value)
-            if (!o) return <span className={s.selectPlaceholder}> </span>
+            if (!o) return <span>{props.value}</span>
             return (
               <span
                 className={s.selectTag}
@@ -76,8 +83,8 @@ SelectCell.displayName = 'SelectCell'
 type MultiSelectColData = { options: FieldOption[]; fieldId: string }
 
 const MultiSelectCell = React.memo(
-  ({ active, rowData, setRowData, focus, stopEditing, columnData }: CellProps<any, MultiSelectColData>) => {
-    const ref = useRef<any>(null)
+  ({ active, rowData, setRowData, focus, stopEditing, columnData }: CellProps<RowData, MultiSelectColData>) => {
+    const ref = useRef<React.ComponentRef<typeof Select>>(null)
     const { options, fieldId } = columnData
 
     useLayoutEffect(() => {
@@ -88,13 +95,7 @@ const MultiSelectCell = React.memo(
       }
     }, [focus])
 
-    const selected: string[] = (() => {
-      try {
-        return JSON.parse(rowData?.[fieldId] || '[]')
-      } catch {
-        return []
-      }
-    })()
+    const selected = parseMultiValue(rowData?.[fieldId])
 
     return (
       <div className={focus ? s.cellFull : s.cellFullNoPointer}>
@@ -122,7 +123,7 @@ const MultiSelectCell = React.memo(
               </span>
             ),
           }))}
-          tagRender={(props: any) => {
+          tagRender={(props) => {
             const o = options.find((x) => x.label === props.value)
             return (
               <span
@@ -147,129 +148,187 @@ MultiSelectCell.displayName = 'MultiSelectCell'
 
 /* ── DatePicker cell component ── */
 
+const EmailEditor = lazy(() => import('./components/EmailEditor'))
+const DateEditor = lazy(() => import('./components/DateEditor'))
 function createDateCell(fieldId: string) {
-  const C = React.memo(({ active, rowData, setRowData, focus, stopEditing }: CellProps<any, any>) => {
-    const ref = useRef<any>(null)
-    const raw = rowData?.[fieldId] as Date | null | undefined
-    const value: Dayjs | null = raw ? dayjs(raw) : null
-
-    useLayoutEffect(() => {
-      if (focus) {
-        ref.current?.focus()
-      } else {
-        ref.current?.blur()
-      }
-    }, [focus])
-
-    const handleChange = (d: Dayjs | null) => {
-      setRowData({ ...rowData, [fieldId]: d ? d.toDate() : null })
-      setTimeout(() => stopEditing({ nextRow: false }), 0)
-    }
-
-    if (active) {
-      return (
-        <div className={focus ? s.cellFull : s.cellFullNoPointer}>
-          <DatePicker
-            ref={ref}
-            open={focus}
-            value={value}
-            onBlur={() => stopEditing({ nextRow: false })}
-            onChange={handleChange}
-            getPopupContainer={() => document.body}
-            variant="borderless"
-            allowClear={false}
-            suffixIcon={null}
-            placeholder=""
-            className={s.cellFull}
-          />
-        </div>
-      )
-    }
-
-    return (
-      <span className={`${s.dateCell} ${value ? s.dateCellValue : s.dateCellEmpty}`}>
-        {value ? value.format('YYYY-MM-DD') : ''}
-      </span>
+  const DateCell = (props: CellProps<RowData, unknown>) => {
+    const text = cellText(props.rowData[fieldId], { id: fieldId, label: '', type: 'date' })
+    const display = <span className={`${s.dateCell} ${text ? s.dateCellValue : s.dateCellEmpty}`}>{text}</span>
+    return props.focus ? (
+      <Suspense fallback={display}>
+        <DateEditor {...props} fieldId={fieldId} />
+      </Suspense>
+    ) : (
+      display
     )
-  })
-  C.displayName = 'DateCell'
-  return C
+  }
+  return DateCell
 }
 
-export default function buildDsgCol(field: FieldDef) {
-  const common = { title: field.label, minWidth: 140 }
+function ProgressCell({
+  rowData,
+  setRowData,
+  focus,
+  stopEditing,
+  columnData,
+}: CellProps<RowData, { fieldId: string }>) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const { fieldId } = columnData
+  const val = Math.min(100, Math.max(0, Number(rowData[fieldId]) || 0))
+  useLayoutEffect(() => {
+    if (focus) {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [focus])
+  if (focus)
+    return (
+      <input
+        ref={inputRef}
+        type="number"
+        min={0}
+        max={100}
+        aria-label="进度百分比"
+        value={val}
+        onChange={(e) => {
+          setRowData({
+            ...rowData,
+            [fieldId]: e.target.value === '' ? '' : String(Math.min(100, Math.max(0, Number(e.target.value) || 0))),
+          })
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === 'Escape') {
+            e.preventDefault()
+            e.stopPropagation()
+            stopEditing({ nextRow: false })
+          }
+        }}
+        onBlur={() => stopEditing({ nextRow: false })}
+        className={s.progressInput}
+      />
+    )
+  return (
+    <div className={s.progressCell}>
+      <Progress
+        percent={val}
+        size="small"
+        showInfo={false}
+        strokeColor="var(--color-primary)"
+        className={s.progressBar}
+      />
+      <span className={s.progressPercent}>{val}%</span>
+    </div>
+  )
+}
+
+export default function buildDsgCol(field: FieldDef): Partial<Column<RowData>> {
+  const common = {
+    id: field.id,
+    title: field.label,
+    minWidth: 140,
+    isCellEmpty: ({ rowData }: { rowData: RowData }) => isEmptyValue(rowData[field.id], field),
+  }
   switch (field.type) {
-    case 'number':
-      return { ...keyColumn(field.id, intColumn), ...common }
-    case 'float':
-      return { ...keyColumn(field.id, floatColumn), ...common }
-    case 'date':
+    case 'email':
       return {
-        ...keyColumn(field.id, createTextColumn()),
+        ...scalarColumn(field.id, textColumn),
         ...common,
-        component: createDateCell(field.id),
+        keepFocus: true,
+        disableKeys: true,
+        component: (props) =>
+          props.focus ? (
+            <Suspense fallback={<span>{String(props.rowData[field.id] ?? '')}</span>}>
+              <EmailEditor {...props} fieldId={field.id} />
+            </Suspense>
+          ) : (
+            <span className={s.dateCell}>{String(props.rowData[field.id] ?? '')}</span>
+          ),
+        pasteValue: ({ rowData, value }) => {
+          const email = normalizeEmail(value)
+          return email === null ? rowData : { ...rowData, [field.id]: email }
+        },
+      }
+    case 'number':
+      return { ...scalarColumn(field.id, intColumn), ...common }
+    case 'float':
+      return { ...scalarColumn(field.id, floatColumn), ...common }
+    case 'date': {
+      const DateCell = createDateCell(field.id)
+      return {
+        ...scalarColumn(field.id, createTextColumn()),
+        ...common,
+        component: (props) => <DateCell {...props} />,
+        copyValue: ({ rowData }: { rowData: RowData }) => cellText(rowData[field.id], field),
+        deleteValue: ({ rowData }: { rowData: RowData }) => ({ ...rowData, [field.id]: null }),
+        pasteValue: ({ rowData, value }) => {
+          const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? dayjs(value) : null
+          return {
+            ...rowData,
+            [field.id]: date?.isValid() && date.format('YYYY-MM-DD') === value ? date.toDate() : null,
+          }
+        },
         keepFocus: true,
         disableKeys: true,
       }
+    }
     case 'checkbox':
-      return { ...keyColumn(field.id, checkboxColumn), ...common, minWidth: 80, width: 80 }
+      return { ...scalarColumn(field.id, checkboxColumn), ...common, minWidth: 80, width: 80 }
     case 'select':
       return {
-        ...keyColumn(field.id, createTextColumn()),
+        ...scalarColumn(field.id, createTextColumn()),
         ...common,
-        component: SelectCell,
+        component: (props) => <SelectCell {...props} />,
         columnData: { options: field.options || [], fieldId: field.id },
         keepFocus: true,
         disableKeys: true,
-        deleteValue: () => null,
-        copyValue: ({ rowData }: any) =>
-          (field.options || []).find((o) => o.label === rowData[field.id])?.label ?? null,
-        pasteValue: ({ value }: any) => (field.options || []).find((o) => o.label === value)?.label ?? null,
+        deleteValue: ({ rowData }: { rowData: RowData }) => ({ ...rowData, [field.id]: '' }),
+        copyValue: ({ rowData }) => (field.options || []).find((o) => o.label === rowData[field.id])?.label ?? null,
+        pasteValue: ({ rowData, value }) => ({
+          ...rowData,
+          [field.id]: (field.options || []).find((o) => o.label === value)?.label ?? '',
+        }),
       }
     case 'multi_select':
       return {
-        ...keyColumn(field.id, createTextColumn()),
+        ...scalarColumn(field.id, createTextColumn()),
         ...common,
-        component: MultiSelectCell,
+        component: (props) => <MultiSelectCell {...props} />,
         columnData: { options: field.options || [], fieldId: field.id },
         keepFocus: true,
         disableKeys: true,
-        deleteValue: () => null,
-        copyValue: ({ rowData }: any) => {
-          try {
-            const selected: string[] = JSON.parse(rowData[field.id] || '[]')
-            return selected.join(', ')
-          } catch {
-            return null
-          }
-        },
-        pasteValue: ({ value }: any) => {
-          const labels = value
-            .split(',')
-            .map((s: string) => s.trim())
-            .filter(Boolean)
-          const matched = labels
-            .map((l: string) => (field.options || []).find((o) => o.label === l)?.label)
-            .filter(Boolean)
-          return matched.length ? JSON.stringify(matched) : null
-        },
+        deleteValue: ({ rowData }: { rowData: RowData }) => ({ ...rowData, [field.id]: '[]' }),
+        copyValue: ({ rowData }: { rowData: RowData }) => parseMultiValue(rowData[field.id]).join(', '),
+        pasteValue: ({ rowData, value }) => ({
+          ...rowData,
+          [field.id]: JSON.stringify([
+            ...new Set(
+              value
+                .split(',')
+                .map((s: string) => s.trim())
+                .filter((label: string) => field.options?.some((option) => option.label === label)),
+            ),
+          ]),
+        }),
       }
     case 'link':
       return {
-        ...keyColumn(field.id, createTextColumn()),
+        ...scalarColumn(field.id, createTextColumn()),
         ...common,
-        component: ({ rowData, setRowData }: any) => {
-          const data: Record<string, string> = (() => {
-            try {
-              return JSON.parse(rowData[field.id] || '{}')
-            } catch {
-              return {}
-            }
-          })()
+        deleteValue: ({ rowData }: { rowData: RowData }) => ({ ...rowData, [field.id]: '{}' }),
+        copyValue: ({ rowData }: { rowData: RowData }) => {
+          const data = parseLinkValue(rowData[field.id])
+          return data.link || data.text
+        },
+        pasteValue: ({ rowData, value }) => ({
+          ...rowData,
+          [field.id]: JSON.stringify({ text: value, link: safeLink(value) ?? '' }),
+        }),
+        component: ({ rowData, setRowData, active }) => {
+          const data = parseLinkValue(rowData[field.id])
           const displayText = data.text || data.link || ''
-          const linkUrl = data.link || ''
+          const linkUrl = safeLink(data.link)
           return (
-            <div className="link-cell">
+            <div className={`link-cell ${active ? 'link-cell-active' : ''}`}>
               <span className="link-cell-text" title={displayText}>
                 {displayText || <span className={s.linkCellPlaceholder}> </span>}
               </span>
@@ -288,7 +347,7 @@ export default function buildDsgCol(field: FieldDef) {
                   title="编辑链接"
                 />
               </LinkPopup>
-              {displayText && (
+              {linkUrl && (
                 <a
                   href={linkUrl}
                   target="_blank"
@@ -306,10 +365,10 @@ export default function buildDsgCol(field: FieldDef) {
       }
     case 'rating':
       return {
-        ...keyColumn(field.id, createTextColumn()),
+        ...scalarColumn(field.id, createTextColumn()),
         ...common,
-        component: ({ rowData, setRowData, focus }: any) => {
-          const val = parseInt(rowData[field.id], 10) || 0
+        component: ({ rowData, setRowData, focus }) => {
+          const val = Math.max(0, Math.min(5, parseInt(String(rowData[field.id] ?? ''), 10) || 0))
           return (
             <div className={focus ? s.ratingCell : s.ratingCellNoPointer}>
               <Rate
@@ -324,37 +383,19 @@ export default function buildDsgCol(field: FieldDef) {
       }
     case 'progress':
       return {
-        ...keyColumn(field.id, createTextColumn()),
+        ...scalarColumn(field.id, createTextColumn()),
         ...common,
-        component: ({ rowData, setRowData, focus }: any) => {
-          const val = Math.min(100, Math.max(0, parseInt(rowData[field.id], 10) || 0))
-          if (focus) {
-            return (
-              <input
-                defaultValue={val}
-                onChange={(e) => {
-                  const n = parseInt(e.target.value, 10)
-                  if (!Number.isNaN(n)) setRowData({ ...rowData, [field.id]: String(Math.min(100, Math.max(0, n))) })
-                }}
-                className={s.progressInput}
-              />
-            )
-          }
-          return (
-            <div className={s.progressCell}>
-              <Progress
-                percent={val}
-                size="small"
-                showInfo={false}
-                strokeColor="var(--color-primary)"
-                className={s.progressBar}
-              />
-              <span className={s.progressPercent}>{val}%</span>
-            </div>
-          )
-        },
+        columnData: { fieldId: field.id },
+        component: ProgressCell,
+        keepFocus: true,
+        disableKeys: true,
+        pasteValue: ({ rowData, value }) => ({
+          ...rowData,
+          [field.id]:
+            value.trim() && Number.isFinite(Number(value)) ? String(Math.max(0, Math.min(100, Number(value)))) : '',
+        }),
       }
     default:
-      return { ...keyColumn(field.id, textColumn), ...common }
+      return { ...scalarColumn(field.id, textColumn), ...common }
   }
 }

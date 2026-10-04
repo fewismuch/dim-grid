@@ -1,0 +1,7 @@
+.icon {
+  color: var(--color-primary);
+}
+.iconPlaceholder {
+  width: 14px;
+  display: inline-block;
+}

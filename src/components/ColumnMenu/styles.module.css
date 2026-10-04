@@ -1,0 +1,15 @@
+.colMenu {
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  margin-left: auto;
+}
+.colMenu:focus-within,
+:global(.dsg-cell-header:hover) .colMenu {
+  opacity: 1;
+}
+@media (hover: none) {
+  .colMenu {
+    opacity: 1;
+  }
+}

@@ -36,10 +36,10 @@ export default function SortPanel({ fields, sorts, onAdd, onUpdate, onDelete }: 
               { value: 'desc', label: '降序' },
             ]}
           />
-          <Button type="text" danger icon={<Ic.X />} onClick={() => onDelete(s.id)} />
+          <Button type="text" danger aria-label="删除条件" icon={<Ic.X />} onClick={() => onDelete(s.id)} />
         </div>
       ))}
-      <Button type="link" className={style.addLink} onClick={onAdd}>
+      <Button type="link" className={style.addLink} onClick={onAdd} disabled={!fields.length}>
         <Ic.Plus />
         添加排序条件
       </Button>
@@ -48,7 +48,7 @@ export default function SortPanel({ fields, sorts, onAdd, onUpdate, onDelete }: 
 
   return (
     <Popover open={open} onOpenChange={setOpen} content={content} trigger="click" placement="bottomLeft">
-      <button className={`tb-btn ${activeCount ? 'active' : ''}`}>
+      <button type="button" className={`tb-btn ${activeCount ? 'active' : ''}`}>
         <Ic.Sort />
         排序{activeCount > 0 && ` (${activeCount})`}
       </button>
