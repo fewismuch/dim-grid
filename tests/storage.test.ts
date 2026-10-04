@@ -147,3 +147,16 @@ test('quota and unavailable storage failures are explicit, with no false save su
   assert.equal(saveDocument(healthy, initialDocument()), null)
   assert.equal(loadDocument(healthy, initialDocument()).document.rows[0].f1, '任务 A')
 })
+
+test('custom storage keys keep embedded grids independent', () => {
+  const storage = memory()
+  const first = initialDocument()
+  const second = initialDocument()
+  first.view.name = '第一张表'
+  second.view.name = '第二张表'
+  assert.equal(saveDocument(storage, first, 'grid.first'), null)
+  assert.equal(saveDocument(storage, second, 'grid.second'), null)
+  assert.equal(loadDocument(storage, initialDocument(), 'grid.first').document.view.name, '第一张表')
+  assert.equal(loadDocument(storage, initialDocument(), 'grid.second').document.view.name, '第二张表')
+  assert.equal(storage.getItem(STORAGE_KEY), null)
+})

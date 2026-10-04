@@ -43,8 +43,25 @@ import { cellText, createRow, duplicateRow, duplicateValues, processRows } from 
 
 const FieldModal = lazy(() => import('./components/FieldModal'))
 
-export default function App() {
-  const { document: table, execute, setView, saveError, recoveryRaw, replaceDocument } = useTableDocument()
+export interface DimGridProps {
+  /** A unique key is recommended when several grids share the same origin. */
+  storageKey?: string
+  /** Height of the grid container; defaults to 100%. */
+  height?: React.CSSProperties['height']
+  className?: string
+  style?: React.CSSProperties
+}
+
+export default function App({ storageKey, height = '100%', className, style }: DimGridProps) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const {
+    document: table,
+    execute,
+    setView,
+    saveError,
+    recoveryRaw,
+    replaceDocument,
+  } = useTableDocument(storageKey, rootRef)
   const { fields, rows } = table
   const { filters, groupBy, sorts, colStats, hiddenFields, highlightDupes, pinnedFieldId, rowHeight } = table.view
   const rowPixels = ROW_HEIGHT[rowHeight].pixels
@@ -524,7 +541,7 @@ export default function App() {
   }
 
   return (
-    <div className={s.app}>
+    <div ref={rootRef} className={`${s.app} dim-grid${className ? ` ${className}` : ''}`} style={{ ...style, height }}>
       <Flex className={s.toolbar} align="center" justify="space-between" gap="small" wrap>
         <ViewTitle name={table.view.name} onRename={(name) => setView('name', name)} />
         <Flex className={s.toolbarActions} align="center" justify="flex-end" gap="0" wrap>

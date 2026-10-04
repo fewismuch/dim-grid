@@ -224,10 +224,10 @@ export type LoadResult = {
   writable: boolean
   recoveryRaw: string | null
 }
-export function loadDocument(storage: StorageLike, fallback: TableDocument): LoadResult {
+export function loadDocument(storage: StorageLike, fallback: TableDocument, key = STORAGE_KEY): LoadResult {
   let raw: string | null = null
   try {
-    raw = storage.getItem(STORAGE_KEY)
+    raw = storage.getItem(key)
     return { document: raw ? deserializeDocument(raw) : fallback, error: null, writable: true, recoveryRaw: null }
   } catch (error) {
     return {
@@ -239,9 +239,9 @@ export function loadDocument(storage: StorageLike, fallback: TableDocument): Loa
   }
 }
 
-export function saveDocument(storage: StorageLike, document: TableDocument): string | null {
+export function saveDocument(storage: StorageLike, document: TableDocument, key = STORAGE_KEY): string | null {
   try {
-    storage.setItem(STORAGE_KEY, serializeDocument(document))
+    storage.setItem(key, serializeDocument(document))
     return null
   } catch {
     return '本地保存失败（可能是空间不足或浏览器限制），请导出备份。'

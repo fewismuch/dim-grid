@@ -1,19 +1,19 @@
-*,
-*::before,
-*::after {
+.dim-grid,
+.dim-grid *,
+.dim-grid *::before,
+.dim-grid *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-body {
+.dim-grid {
   color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--color-bg);
-  min-height: 100vh;
 }
 
-:root {
+.dim-grid {
   /* Ant Design neutral palette; keep the existing brand green. */
   --color-primary: #00b96b;
   --color-text: #262626;
@@ -222,8 +222,8 @@ body {
   color: inherit;
   font: inherit;
 }
-input::placeholder,
-textarea::placeholder {
+.dim-grid input::placeholder,
+.dim-grid textarea::placeholder {
   color: var(--color-text-placeholder);
 }
 .dsg-checkbox {

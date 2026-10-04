@@ -6,6 +6,7 @@ import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
+import './demo.css'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Missing root element')
@@ -13,7 +14,7 @@ dayjs.locale('zh-cn')
 ReactDOM.createRoot(root).render(
   <StrictMode>
     <ConfigProvider locale={zhCN} theme={{ token: { colorPrimary: '#00b96b' } }}>
-      <App />
+      <App height="100dvh" />
     </ConfigProvider>
   </StrictMode>,
 )

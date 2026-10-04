@@ -1,6 +1,30 @@
 # dim-grid
 
-基于 React、Ant Design 和 react-datasheet-grid 的多维表格前端演示。支持字段配置、筛选、排序、分组、搜索、重复值高亮、统计、本机自动保存、撤销重做和 JSON 备份。
+可嵌入其他 React 项目的多维表格组件，基于 React、Ant Design 和 react-datasheet-grid。支持字段配置、筛选、排序、分组、搜索、重复值高亮、统计、本机自动保存、撤销重做和 JSON 备份。
+
+## 作为组件使用
+
+项目需提供 React 18 或 19 及 React DOM。先打包本仓库，再从生成的 tarball 安装：
+
+```sh
+pnpm pack
+# 在使用方项目中：pnpm add /路径/dim-grid-1.0.0.tgz
+```
+
+在使用方应用中引入样式，并给组件一个有确定高度的容器：
+
+```tsx
+import { DimGrid } from 'dim-grid'
+import 'dim-grid/style.css'
+
+export function RecordsPage() {
+  return <DimGrid height={600} storageKey="records-page.document" />
+}
+```
+
+`height` 默认是 `100%`，此时父容器必须有确定高度。`storageKey` 默认是 `dim-grid.document`；同一域名下放置多个表格时，每个实例应使用不同的键，避免相互覆盖。也可传 `className` 和 `style` 控制外层容器。组件在浏览器 localStorage 中自动保存，支持 JSON 备份；数据目前不能直接通过受控 props 注入。公共入口还导出 `TableDocument`、`FieldDef` 等类型及文档序列化函数。库包内包含已修补的表格依赖代码，使用方不需要执行仓库中的补丁脚本。
+
+`pnpm build` 仍构建独立演示页；`pnpm build:lib` 生成 ESM、CommonJS、CSS 和 TypeScript 声明。源码依赖 Node.js 22.18+，库使用方按其自身构建工具要求配置。
 
 ## 开发
 
@@ -41,7 +65,7 @@ pnpm check
 
 ## 保存与恢复
 
-编辑后约 250ms 保存到当前浏览器的 localStorage，刷新会恢复字段、记录及视图设置。正常保存不常驻提示，失败时显示错误。删除字段、转换类型和导入备份均可撤销；历史最多 50 步，仅保留在当前页面会话，刷新后清空。撤销／重做通过快捷键操作：表格外可使用 Ctrl / ⌘ Z、Ctrl / ⌘ Shift Z。
+编辑后约 250ms 保存到当前浏览器的 localStorage，刷新会恢复字段、记录及视图设置。正常保存不常驻提示，失败时显示错误。删除字段、转换类型和导入备份均可撤销；历史最多 50 步，仅保留在当前页面会话，刷新后清空。撤销／重做通过快捷键操作：聚焦表格组件内的非编辑控件时可使用 Ctrl / ⌘ Z、Ctrl / ⌘ Shift Z。
 
 右侧“更多操作”中的“导出备份”可下载 JSON 或复制内容另存为 `.json`；“导入备份”接受不超过 20 MB 的文件并校验格式。导入会替换当前表格，可以撤销。版本 2 使用日期 `YYYY-MM-DD`、多选数组和链接对象；内存编辑器仍通过既有适配层读写。版本 1 会自动迁移。
 
@@ -51,6 +75,6 @@ pnpm check
 
 完整问题与修复记录见 [项目审查报告](docs/review.md)。
 
-固定列显示在行号列右侧。`scripts/patch-grid.mjs` 为当前锁定的 react-datasheet-grid 4.11.6 补充左侧固定列的虚拟化、点击定位和选中框处理，安装、启动和构建时自动应用；升级该依赖时需同步检查此补丁。
+固定列显示在行号列右侧。`scripts/patch-grid.mjs` 为当前锁定的 react-datasheet-grid 4.11.6 补充左侧固定列的虚拟化、点击定位和选中框处理，启动和构建时自动应用；升级该依赖时需同步检查此补丁。
 
 工具栏左侧视图名称支持点击编辑，Enter 或失焦保存、Esc 取消，刷新和备份均保留名称。目前只维护一个视图。工具栏操作靠右，普通按钮、输入框、颜色选择器和菜单直接使用 Ant Design；CSS 保留布局与表格、拖拽所需样式，不另建控件外观。

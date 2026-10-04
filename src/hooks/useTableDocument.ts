@@ -1,12 +1,12 @@
-import type { SetStateAction } from 'react'
+import type { RefObject, SetStateAction } from 'react'
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import type { TableCommand, TableView } from '../model/document'
 import { historyReducer, historyState, initialDocument } from '../model/document'
 import { loadDocument, STORAGE_KEY, saveDocument } from '../model/storage'
 
-function load() {
+function load(storageKey: string) {
   try {
-    return loadDocument(window.localStorage, initialDocument())
+    return loadDocument(window.localStorage, initialDocument(), storageKey)
   } catch {
     return {
       document: initialDocument(),
@@ -17,8 +17,8 @@ function load() {
   }
 }
 
-export default function useTableDocument() {
-  const [loaded] = useState(load)
+export default function useTableDocument(storageKey = STORAGE_KEY, rootRef?: RefObject<HTMLDivElement | null>) {
+  const [loaded] = useState(() => load(storageKey))
   const [history, dispatch] = useReducer(historyReducer, loaded.document, historyState)
   const [saveError, setSaveError] = useState(loaded.error)
   const writable = useRef(loaded.writable)
@@ -58,7 +58,7 @@ export default function useTableDocument() {
     const save = () => {
       if (!writable.current) return
       try {
-        const error = saveDocument(window.localStorage, latest.current)
+        const error = saveDocument(window.localStorage, latest.current, storageKey)
         setSaveError(error)
       } catch {
         setSaveError('无法访问浏览器存储，请导出备份。')
@@ -71,15 +71,16 @@ export default function useTableDocument() {
       window.clearTimeout(timer)
       window.removeEventListener('pagehide', save)
     }
-  }, [history.present])
+  }, [history.present, storageKey])
 
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
-      if (event.key !== STORAGE_KEY) return
+      if (event.key !== storageKey) return
       writable.current = false
       setSaveError('另一页面修改了本地表格，已暂停此页保存。请导出本页备份并刷新。')
     }
     const onKeyDown = (event: KeyboardEvent) => {
+      if (!rootRef?.current?.contains(event.target as Node)) return
       if (!(event.metaKey || event.ctrlKey) || event.altKey || event.isComposing) return
       if ((event.target as HTMLElement)?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]'))
         return
@@ -97,7 +98,7 @@ export default function useTableDocument() {
       window.removeEventListener('storage', onStorage)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [undo, redo])
+  }, [undo, redo, storageKey, rootRef])
 
   return {
     document: history.present,

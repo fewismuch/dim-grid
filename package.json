@@ -1,16 +1,12 @@
 {
-  "name": "airtable-grid",
+  "name": "dim-grid",
   "version": "1.0.0",
-  "private": true,
   "dependencies": {
     "@ant-design/icons": "~6.2.5",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "antd": "^6.4.3",
-    "dayjs": "^1.11.21",
-    "react": "^18.2.0",
-    "react-datasheet-grid": "4.11.6",
-    "react-dom": "^18.2.0"
+    "dayjs": "^1.11.21"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
@@ -18,10 +14,12 @@
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^5.2.0",
     "typescript": "~5.9.3",
-    "vite": "^7.3.6"
+    "vite": "^7.3.6",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-datasheet-grid": "4.11.6"
   },
   "scripts": {
-    "postinstall": "node scripts/patch-grid.mjs",
     "dev": "node scripts/patch-grid.mjs && vite --force",
     "build": "node scripts/patch-grid.mjs && vite build",
     "analyze": "node scripts/analyze-build.mjs",
@@ -30,10 +28,36 @@
     "format": "biome format --write",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
-    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm build:lib",
+    "build:lib": "node scripts/patch-grid.mjs && vite build --config vite.lib.config.js && tsc -p tsconfig.build.json",
+    "prepack": "pnpm build:lib"
   },
   "type": "module",
-  "engines": {
-    "node": ">=22.18.0"
+  "description": "Embeddable React multidimensional grid",
+  "license": "MIT",
+  "files": [
+    "dist/lib",
+    "dist/types",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/lib/dim-grid.cjs",
+  "module": "./dist/lib/dim-grid.js",
+  "types": "./dist/types/index.d.ts",
+  "style": "./dist/lib/style.css",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/lib/dim-grid.js",
+      "require": "./dist/lib/dim-grid.cjs"
+    },
+    "./style.css": "./dist/lib/style.css"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "peerDependencies": {
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0"
   }
 }
