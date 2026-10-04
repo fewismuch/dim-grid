@@ -1,4 +1,4 @@
-import { Button, Popover, Select } from 'antd'
+import { Button, Popover, Select, Tooltip } from 'antd'
 import { useState } from 'react'
 import { type FieldDef, Ic, type SortItem } from '../../constants'
 import style from './styles.module.css'
@@ -39,7 +39,7 @@ export default function SortPanel({ fields, sorts, onAdd, onUpdate, onDelete }: 
           <Button type="text" danger aria-label="删除条件" icon={<Ic.X />} onClick={() => onDelete(s.id)} />
         </div>
       ))}
-      <Button type="link" className={style.addLink} onClick={onAdd} disabled={!fields.length}>
+      <Button type="link" onClick={onAdd} disabled={!fields.length}>
         <Ic.Plus />
         添加排序条件
       </Button>
@@ -48,10 +48,9 @@ export default function SortPanel({ fields, sorts, onAdd, onUpdate, onDelete }: 
 
   return (
     <Popover open={open} onOpenChange={setOpen} content={content} trigger="click" placement="bottomLeft">
-      <button type="button" className={`tb-btn ${activeCount ? 'active' : ''}`}>
-        <Ic.Sort />
-        排序{activeCount > 0 && ` (${activeCount})`}
-      </button>
+      <Tooltip title={activeCount > 0 ? `排序 (${activeCount})` : '排序'}>
+        <Button color={activeCount > 0 ? 'primary' : 'default'} variant="text" icon={<Ic.Sort />} />
+      </Tooltip>
     </Popover>
   )
 }

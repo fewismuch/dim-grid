@@ -1,5 +1,6 @@
+import { Dropdown } from 'antd'
 import * as React from 'react'
-import { useCallback, useRef } from 'react'
+import { useCallback } from 'react'
 import type { ContextMenuComponentProps, ContextMenuItem } from 'react-datasheet-grid'
 
 const useDocumentEventListener = <K extends keyof DocumentEventMap>(
@@ -61,21 +62,7 @@ export const defaultRenderItem = (item: ContextMenuItem) => {
 
 export const createContextMenuComponent =
   (renderItem: (item: ContextMenuItem) => JSX.Element = defaultRenderItem) =>
-  // eslint-disable-next-line react/display-name
   ({ clientX, clientY, items, close }: ContextMenuComponentProps) => {
-    const containerRef = useRef<HTMLDivElement>(null)
-
-    const onClickOutside = useCallback(
-      (event: MouseEvent) => {
-        const clickInside = containerRef.current?.contains(event.target as Node)
-
-        if (!clickInside) {
-          close()
-        }
-      },
-      [close],
-    )
-    useDocumentEventListener('mousedown', onClickOutside)
     useDocumentEventListener(
       'keydown',
       useCallback(
@@ -85,23 +72,27 @@ export const createContextMenuComponent =
         [close],
       ),
     )
-
     return (
-      <div className="dsg-context-menu" style={{ left: `${clientX}px`, top: `${clientY}px` }} ref={containerRef}>
-        {items.map((item) => (
-          <button
-            type="button"
-            key={item.type}
-            onClick={() => {
+      <Dropdown
+        open
+        placement="bottomLeft"
+        onOpenChange={(open) => {
+          if (!open) close()
+        }}
+        menu={{
+          items: items.map((item) => ({
+            key: item.type,
+            label: renderItem(item),
+            danger: item.type.startsWith('DELETE'),
+            onClick: () => {
               item.action()
               close()
-            }}
-            className="dsg-context-menu-item"
-          >
-            {renderItem(item)}
-          </button>
-        ))}
-      </div>
+            },
+          })),
+        }}
+      >
+        <span style={{ position: 'fixed', left: clientX, top: clientY, width: 1, height: 1 }} />
+      </Dropdown>
     )
   }
 

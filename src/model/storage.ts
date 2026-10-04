@@ -17,6 +17,8 @@ const fieldTypes = new Set([
   'email',
   'rating',
   'progress',
+  'created_time',
+  'modified_time',
 ])
 const reserved = new Set(['id', '__proto__', 'prototype', 'constructor'])
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -75,7 +77,9 @@ export function deserializeDocument(raw: string): TableDocument {
       typeof field.label !== 'string' ||
       !field.label.trim() ||
       typeof field.type !== 'string' ||
-      !fieldTypes.has(field.type)
+      !fieldTypes.has(field.type) ||
+      (field.width !== undefined &&
+        (typeof field.width !== 'number' || !Number.isInteger(field.width) || field.width < 60 || field.width > 1200))
     )
       return fail()
     ids.add(field.id)
@@ -99,7 +103,13 @@ export function deserializeDocument(raw: string): TableDocument {
           return { id, label: option.label, color: option.color, textColor: option.textColor }
         })
       : undefined
-    return { id: field.id, label: field.label, type: field.type as FieldType, ...(options ? { options } : {}) }
+    return {
+      id: field.id,
+      label: field.label,
+      type: field.type as FieldType,
+      ...(options ? { options } : {}),
+      ...(field.width !== undefined ? { width: field.width } : {}),
+    }
   })
   const rowIds = new Set<string>()
   const rows: RowData[] = data.rows.map((source, index) => {
@@ -136,6 +146,13 @@ export function deserializeDocument(raw: string): TableDocument {
       } else if (field.type === 'checkbox') {
         if (typeof value !== 'boolean') return fail()
         row[field.id] = value
+      } else if (field.type === 'created_time' || field.type === 'modified_time') {
+        if (
+          value !== null &&
+          (typeof value !== 'string' || !Number.isFinite(Date.parse(value)) || new Date(value).toISOString() !== value)
+        )
+          return fail()
+        row[field.id] = value
       } else if (['number', 'float'].includes(field.type)) {
         if (value !== null && (typeof value !== 'number' || !Number.isFinite(value))) return fail()
         row[field.id] = value
@@ -148,6 +165,9 @@ export function deserializeDocument(raw: string): TableDocument {
   })
   const view = emptyView()
   const saved = record(data.view) ? data.view : {}
+  if (typeof saved.name === 'string' && saved.name.trim()) view.name = saved.name.trim().slice(0, 60)
+  view.pinnedFieldId =
+    typeof saved.pinnedFieldId === 'string' && ids.has(saved.pinnedFieldId) ? saved.pinnedFieldId : ''
   view.hiddenFields = new Set(strings(saved.hiddenFields).filter((id) => ids.has(id)))
   view.highlightDupes = new Set(strings(saved.highlightDupes).filter((id) => ids.has(id)))
   if (record(saved.groupBy) && typeof saved.groupBy.fieldId === 'string' && ids.has(saved.groupBy.fieldId)) {

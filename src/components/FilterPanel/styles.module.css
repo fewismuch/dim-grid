@@ -34,10 +34,6 @@
   width: 100px;
 }
 
-.addLink {
-  padding: 0;
-}
-
 @media (max-width: 420px) {
   .row {
     flex-wrap: wrap;

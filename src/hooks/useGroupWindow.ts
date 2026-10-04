@@ -8,7 +8,11 @@ export default function useGroupWindow(
   container: RefObject<HTMLDivElement>,
 ) {
   const [viewport, setViewport] = useState({ top: 0, height: 600 })
-  const offsets = useMemo(() => groupOffsets(groups ?? [], collapsed), [groups, collapsed])
+  const gridMaxHeight = Math.max(100, viewport.height - 36)
+  const offsets = useMemo(
+    () => groupOffsets(groups ?? [], collapsed, gridMaxHeight),
+    [groups, collapsed, gridMaxHeight],
+  )
   useEffect(() => {
     const element = container.current
     if (!element) return
@@ -27,5 +31,5 @@ export default function useGroupWindow(
       cancelAnimationFrame(frame)
     }
   }, [container])
-  return groupWindow(offsets, viewport.top, viewport.height)
+  return { ...groupWindow(offsets, viewport.top, viewport.height), gridMaxHeight }
 }

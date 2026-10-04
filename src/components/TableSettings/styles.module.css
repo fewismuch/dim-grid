@@ -7,10 +7,10 @@
   color: var(--color-text);
   padding: 0 14px 8px;
   margin-bottom: 4px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-secondary);
 }
 .emptyHint {
-  color: var(--color-text-muted);
+  color: var(--color-icon);
   font-size: 13px;
   padding: 0 14px;
 }
@@ -35,30 +35,17 @@
   align-items: center;
   gap: 8px;
   padding: 6px 14px;
-  background: #fff;
-  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px var(--color-shadow);
   font-size: 14px;
   color: var(--color-text);
   cursor: grabbing;
 }
 .dragHandle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
   cursor: grab;
-  color: var(--color-text-muted);
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-.dragHandle:hover {
-  background: var(--color-border);
-  color: var(--color-text-secondary);
+  touch-action: none;
 }
 .dragHandle:active {
   cursor: grabbing;
@@ -72,20 +59,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.visBtn {
+.settingsButton {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: var(--color-text-muted);
-  border-radius: 4px;
   flex-shrink: 0;
 }
-.visBtn:hover {
-  background: var(--color-border);
-  color: var(--color-text);
+.fieldName > :global(.anticon) {
+  color: var(--color-icon);
 }

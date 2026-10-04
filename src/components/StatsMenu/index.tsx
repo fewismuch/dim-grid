@@ -1,7 +1,6 @@
 import type { MenuProps } from 'antd'
 import { Dropdown } from 'antd'
-import { STAT_OPTS } from '../../constants'
-import styles from './styles.module.css'
+import { Ic, STAT_OPTS } from '../../constants'
 
 interface Props {
   current: string
@@ -13,15 +12,14 @@ export default function StatsMenu({ current, onSelect, onClose }: Props) {
   const items: MenuProps['items'] = STAT_OPTS.map((opt) => ({
     key: opt,
     label: opt,
-    icon: current === opt ? <span className={styles.icon}>✓</span> : <span className={styles.iconPlaceholder} />,
+    icon: current === opt ? <Ic.Check /> : undefined,
     onClick: () => onSelect(opt),
-    style: current === opt ? { color: 'var(--color-primary)' } : undefined,
   }))
 
   return (
     <Dropdown
       open
-      menu={{ items }}
+      menu={{ items, selectedKeys: [current] }}
       onOpenChange={(open) => {
         if (!open) onClose()
       }}

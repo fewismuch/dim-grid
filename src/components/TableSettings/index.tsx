@@ -1,7 +1,8 @@
+import { PushpinFilled, PushpinOutlined } from '@ant-design/icons'
 import { closestCenter, DndContext, type DragEndEvent, DragOverlay, type DragStartEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { Popover } from 'antd'
-import { useCallback, useState } from 'react'
+import { Button, Popover, Tooltip } from 'antd'
+import { type ReactNode, useCallback, useState } from 'react'
 import { FIELD_TYPES, type FieldDef, Ic } from '../../constants'
 import s from './styles.module.css'
 
@@ -9,9 +10,12 @@ interface DraggableFieldProps {
   field: FieldDef
   hidden: boolean
   onToggle: () => void
+  pinned: boolean
+  onPin: () => void
+  menu: ReactNode
 }
 
-function DraggableField({ field, hidden, onToggle }: DraggableFieldProps) {
+function DraggableField({ field, hidden, onToggle, pinned, onPin, menu }: DraggableFieldProps) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: field.id })
 
   const style = {
@@ -22,26 +26,43 @@ function DraggableField({ field, hidden, onToggle }: DraggableFieldProps) {
 
   return (
     <div ref={setNodeRef} className={`${s.row}${hidden ? ` ${s.rowHidden}` : ''}`} style={style}>
-      <button type="button" aria-label={`移动 ${field.label}`} className={s.dragHandle} {...listeners} {...attributes}>
-        <Ic.GripVertical />
-      </button>
+      <Button
+        type="text"
+        size="small"
+        aria-label={`移动 ${field.label}`}
+        className={s.dragHandle}
+        icon={<Ic.GripVertical />}
+        {...listeners}
+        {...attributes}
+      />
       <span className={s.fieldName}>
         {(() => {
           const Icon = FIELD_TYPES.find((f) => f.key === field.type)?.Icon || Ic.Text
           return <Icon />
         })()} {field.label}
       </span>
-      <button
-        type="button"
-        className={s.visBtn}
+      <Button
+        type="text"
+        size="small"
+        icon={hidden ? <Ic.EyeOff /> : <Ic.Eye />}
+        aria-label={`${hidden ? '显示' : '隐藏'}${field.label}列`}
         onClick={(e) => {
           e.stopPropagation()
           onToggle()
         }}
         title={hidden ? '显示' : '隐藏'}
-      >
-        {hidden ? <Ic.EyeOff /> : <Ic.Eye />}
-      </button>
+      />
+      <Button
+        size="small"
+        color={pinned ? 'primary' : 'default'}
+        variant="text"
+        icon={pinned ? <PushpinFilled /> : <PushpinOutlined />}
+        aria-label={`${pinned ? '取消固定' : '固定'}${field.label}列`}
+        aria-pressed={pinned}
+        title={pinned ? '取消固定列' : '固定到左侧（每次一列）'}
+        onClick={onPin}
+      />
+      <span className={s.settingsButton}>{menu}</span>
     </div>
   )
 }
@@ -51,9 +72,20 @@ interface Props {
   hiddenFields: Set<string>
   onReorder: (newFields: FieldDef[]) => void
   onToggleHide: (fieldId: string) => void
+  pinnedFieldId: string
+  onTogglePin: (fieldId: string) => void
+  renderMenu: (field: FieldDef) => ReactNode
 }
 
-export default function TableSettings({ fields, hiddenFields, onReorder, onToggleHide }: Props) {
+export default function TableSettings({
+  fields,
+  hiddenFields,
+  onReorder,
+  onToggleHide,
+  pinnedFieldId,
+  onTogglePin,
+  renderMenu,
+}: Props) {
   const [open, setOpen] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -93,6 +125,9 @@ export default function TableSettings({ fields, hiddenFields, onReorder, onToggl
               field={field}
               hidden={hiddenFields.has(field.id)}
               onToggle={() => onToggleHide(field.id)}
+              pinned={pinnedFieldId === field.id}
+              onPin={() => onTogglePin(field.id)}
+              menu={renderMenu(field)}
             />
           ))}
         </div>
@@ -113,10 +148,9 @@ export default function TableSettings({ fields, hiddenFields, onReorder, onToggl
 
   return (
     <Popover open={open} onOpenChange={setOpen} content={content} trigger="click" placement="bottomLeft">
-      <button type="button" className={`tb-btn ${open ? 'active' : ''}`}>
-        <Ic.Settings />
-        表格设置
-      </button>
+      <Tooltip title="表格设置">
+        <Button color={open ? 'primary' : 'default'} variant="text" icon={<Ic.Settings />} />
+      </Tooltip>
     </Popover>
   )
 }

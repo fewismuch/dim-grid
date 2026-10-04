@@ -1,4 +1,4 @@
-import { Button, Input, Popover, Select } from 'antd'
+import { Button, Input, Popover, Select, Tooltip } from 'antd'
 import { useState } from 'react'
 import { type FieldDef, type FilterItem, Ic } from '../../constants'
 import s from './styles.module.css'
@@ -53,7 +53,7 @@ export default function FilterPanel({ fields, filters, onAdd, onUpdate, onDelete
           <Button type="text" danger aria-label="删除条件" icon={<Ic.X />} onClick={() => onDelete(f.id)} />
         </div>
       ))}
-      <Button type="link" className={s.addLink} onClick={onAdd} disabled={!fields.length}>
+      <Button type="link" onClick={onAdd} disabled={!fields.length}>
         <Ic.Plus />
         添加筛选条件
       </Button>
@@ -62,10 +62,9 @@ export default function FilterPanel({ fields, filters, onAdd, onUpdate, onDelete
 
   return (
     <Popover open={open} onOpenChange={setOpen} content={content} trigger="click" placement="bottomLeft">
-      <button type="button" className={`tb-btn ${activeCount ? 'active' : ''}`}>
-        <Ic.Filter />
-        筛选{activeCount > 0 && ` (${activeCount})`}
-      </button>
+      <Tooltip title={activeCount > 0 ? `筛选 (${activeCount})` : '筛选'}>
+        <Button color={activeCount > 0 ? 'primary' : 'default'} variant="text" icon={<Ic.Filter />} />
+      </Tooltip>
     </Popover>
   )
 }

@@ -8,6 +8,9 @@
 :global(.dsg-cell-header:hover) .colMenu {
   opacity: 1;
 }
+.alwaysVisible {
+  opacity: 1;
+}
 @media (hover: none) {
   .colMenu {
     opacity: 1;

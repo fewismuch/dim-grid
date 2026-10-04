@@ -9,7 +9,7 @@
     "antd": "^6.4.3",
     "dayjs": "^1.11.21",
     "react": "^18.2.0",
-    "react-datasheet-grid": "^4.8.0",
+    "react-datasheet-grid": "4.11.6",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
@@ -21,8 +21,9 @@
     "vite": "^7.3.6"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "postinstall": "node scripts/patch-grid.mjs",
+    "dev": "node scripts/patch-grid.mjs && vite --force",
+    "build": "node scripts/patch-grid.mjs && vite build",
     "analyze": "node scripts/analyze-build.mjs",
     "lint": "biome check",
     "lint:fix": "biome check --write",

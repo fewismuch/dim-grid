@@ -1,10 +1,10 @@
-import { Button, Modal } from 'antd'
+import { Button, Input, type InputRef, Modal } from 'antd'
 import { useRef, useState } from 'react'
 import { cellText } from '../../model/table'
 import s from './styles.module.css'
 
 export default function BackupDialog({ value, onClose }: { value: string; onClose: () => void }) {
-  const textarea = useRef<HTMLTextAreaElement>(null)
+  const textarea = useRef<InputRef>(null)
   const [status, setStatus] = useState('')
   const download = () => {
     const url = URL.createObjectURL(new Blob([value], { type: 'application/json' }))
@@ -47,7 +47,7 @@ export default function BackupDialog({ value, onClose }: { value: string; onClos
       width={560}
     >
       <p className={s.hint}>下载 JSON 文件，或复制备份内容另存为 .json 文件。备份包含字段、记录和视图设置。</p>
-      <textarea ref={textarea} aria-label="备份内容" readOnly value={value} className={s.payload} />
+      <Input.TextArea ref={textarea} rows={8} aria-label="备份内容" readOnly value={value} className={s.payload} />
       <p role="status" className={s.hint}>
         {status}
       </p>

@@ -21,7 +21,6 @@ export default function useTableDocument() {
   const [loaded] = useState(load)
   const [history, dispatch] = useReducer(historyReducer, loaded.document, historyState)
   const [saveError, setSaveError] = useState(loaded.error)
-  const [saved, setSaved] = useState(!loaded.error)
   const writable = useRef(loaded.writable)
   const latest = useRef(history.present)
   const execute = useCallback((command: TableCommand, group?: string) => {
@@ -56,16 +55,13 @@ export default function useTableDocument() {
   useEffect(() => {
     latest.current = history.present
     if (!writable.current) return
-    setSaved(false)
     const save = () => {
       if (!writable.current) return
       try {
         const error = saveDocument(window.localStorage, latest.current)
         setSaveError(error)
-        setSaved(!error)
       } catch {
         setSaveError('无法访问浏览器存储，请导出备份。')
-        setSaved(false)
       }
     }
     const timer = window.setTimeout(save, 250)
@@ -81,7 +77,6 @@ export default function useTableDocument() {
     const onStorage = (event: StorageEvent) => {
       if (event.key !== STORAGE_KEY) return
       writable.current = false
-      setSaved(false)
       setSaveError('另一页面修改了本地表格，已暂停此页保存。请导出本页备份并刷新。')
     }
     const onKeyDown = (event: KeyboardEvent) => {
@@ -114,7 +109,6 @@ export default function useTableDocument() {
     canUndo: !!history.past.length,
     canRedo: !!history.future.length,
     saveError,
-    saved,
     recoveryRaw: loaded.recoveryRaw,
   }
 }

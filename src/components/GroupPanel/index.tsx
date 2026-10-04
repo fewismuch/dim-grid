@@ -1,4 +1,4 @@
-import { Button, Popover, Select } from 'antd'
+import { Button, Popover, Select, Tooltip } from 'antd'
 import { useState } from 'react'
 import { type FieldDef, type GroupByState, Ic } from '../../constants'
 import s from './styles.module.css'
@@ -24,8 +24,18 @@ export default function GroupPanel({ fields, groupBy, onChange, onSortAsc, onSor
           className={s.fieldSelect}
           value={groupBy.fieldId || undefined}
           onChange={(val) => onChange({ fieldId: val || '', collapsed: new Set() })}
-          options={[{ value: '', label: '不分组' }, ...fields.map((f) => ({ value: f.id, label: f.label }))]}
+          options={[...fields.map((f) => ({ value: f.id, label: f.label }))]}
         />
+        {groupBy.fieldId && (
+          <Button
+            type="text"
+            danger
+            aria-label="清除分组"
+            title="清除分组"
+            icon={<Ic.X />}
+            onClick={() => onChange({ fieldId: '', collapsed: new Set() })}
+          />
+        )}
       </div>
       <div className={s.btnRow}>
         <Button size="small" disabled={!groupBy.fieldId} onClick={onSortAsc}>
@@ -40,10 +50,9 @@ export default function GroupPanel({ fields, groupBy, onChange, onSortAsc, onSor
 
   return (
     <Popover open={open} onOpenChange={setOpen} content={content} trigger="click" placement="bottomLeft">
-      <button type="button" className={`tb-btn ${groupBy.fieldId ? 'active' : ''}`}>
-        <Ic.Group />
-        分组{groupBy.fieldId && ` · ${groupField?.label}`}
-      </button>
+      <Tooltip title={groupBy.fieldId ? `分组 · ${groupField?.label}` : '分组'}>
+        <Button color={groupBy.fieldId ? 'primary' : 'default'} variant="text" icon={<Ic.Group />} />
+      </Tooltip>
     </Popover>
   )
 }

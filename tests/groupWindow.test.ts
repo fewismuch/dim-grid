@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { groupOffsets, groupWindow } from '../src/model/groupWindow.ts'
+import { groupGridHeight, groupOffsets, groupWindow } from '../src/model/groupWindow.ts'
 import { reconcileRows } from '../src/model/table.ts'
 
 test('1000 groups only mount viewport and overscan rather than every grid', () => {
@@ -24,6 +24,12 @@ test('collapsed groups, empty lists and shortened content keep valid window boun
   )
   assert.equal(offsets[1], 34)
   assert.equal(groupWindow(offsets, 10000, 600).start, 0)
+})
+
+test('group grids use the available viewport height before scrolling', () => {
+  assert.equal(groupGridHeight(20, 700), 700)
+  assert.equal(groupGridHeight(2, 700), 111)
+  assert.equal(groupOffsets([{ key: 'a', rows: Array(20).fill({}) }], new Set(), 700)[1], 734)
 })
 
 test('bulk paste merges 10000 new records in order without shifting existing hidden records', () => {

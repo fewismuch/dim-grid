@@ -1,4 +1,4 @@
-import { message } from 'antd'
+import { Input, type InputRef, message } from 'antd'
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { CellProps } from 'react-datasheet-grid'
 import s from '../../buildDsgCol.module.css'
@@ -13,7 +13,7 @@ export default function EmailEditor({
 }: CellProps<RowData, unknown> & { fieldId: string }) {
   const previous = String(rowData[fieldId] ?? '')
   const [draft, setDraft] = useState(previous)
-  const ref = useRef<HTMLInputElement>(null)
+  const ref = useRef<InputRef>(null)
   const finished = useRef(false)
   useLayoutEffect(() => {
     ref.current?.focus()
@@ -28,7 +28,8 @@ export default function EmailEditor({
     stopEditing({ nextRow: false })
   }
   return (
-    <input
+    <Input
+      variant="borderless"
       ref={ref}
       type="email"
       aria-label="邮箱地址"

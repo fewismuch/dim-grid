@@ -10,7 +10,76 @@
 .cellPadding {
   padding: 0 8px;
 }
-
+.multilineDisplay {
+  width: 100%;
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.multilineExpandedWrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  pointer-events: none;
+}
+.multilineExpanded {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  max-height: 240px;
+  padding: 7px 8px;
+  border: solid var(--dsg-selection-border-width) var(--dsg-selection-border-color);
+  border-radius: var(--dsg-selection-border-radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  line-height: 20px;
+  white-space: pre-wrap;
+  overflow: hidden;
+  box-shadow: 0 2px 5px var(--color-shadow);
+}
+.multilineExpandedHandle {
+  right: 0;
+  bottom: 0;
+  transform: translate(50%, 50%);
+  pointer-events: auto;
+}
+.singleLineEditor {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 7px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  line-height: 20px;
+  resize: none;
+  overflow: hidden;
+  outline: none;
+}
+.multilineEditor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  min-height: 36px;
+  max-height: 240px;
+  padding: 7px 8px;
+  border: 1px solid var(--color-primary);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  line-height: 20px;
+  resize: none;
+  overflow: auto;
+  outline: none;
+  box-shadow: 0 2px 8px var(--color-shadow);
+}
 /* Select tag */
 .selectTag {
   display: inline-flex;
@@ -101,12 +170,6 @@
 }
 .progressInput {
   width: 100%;
-  height: 100%;
-  border: none;
-  padding: 0 8px;
-  font-size: 13px;
-  font-family: inherit;
-  outline: none;
 }
 
 /* Link cell */
@@ -117,9 +180,4 @@
 .emailInput {
   width: 100%;
   height: 100%;
-  border: 0;
-  outline: none;
-  padding: 0 8px;
-  font: inherit;
-  background: transparent;
 }

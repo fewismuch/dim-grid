@@ -1,7 +1,9 @@
 import type { FieldDef, FilterItem, GroupByState, RowData, SortItem } from './table.ts'
-import { convertValue, createRow, defaultValue, newId, reconcileRows } from './table.ts'
+import { convertValue, defaultValue, isTimestampField, newId, reconcileRows } from './table.ts'
 
 export interface TableView {
+  name: string
+  pinnedFieldId: string
   filters: FilterItem[]
   sorts: SortItem[]
   groupBy: GroupByState
@@ -15,6 +17,8 @@ export interface TableDocument {
   view: TableView
 }
 export const emptyView = (): TableView => ({
+  name: '表格视图',
+  pinnedFieldId: '',
   filters: [],
   sorts: [],
   groupBy: { fieldId: '', collapsed: new Set() },
@@ -51,10 +55,21 @@ export type TableCommand =
   | { type: 'field/delete'; id: string }
   | { type: 'field/duplicate'; id: string; newId: string }
   | { type: 'field/reorder'; fields: FieldDef[] }
+  | { type: 'field/resize'; id: string; width: number }
   | { type: 'rows/change'; before: RowData[]; after: RowData[] }
   | { type: 'rows/add'; row: RowData }
   | { type: 'rows/move'; from: number; to: number }
   | { type: 'view/change'; update: (view: TableView) => TableView }
+
+function withNewTimestamps(row: RowData, fields: FieldDef[], now: string): RowData {
+  const next = { ...row }
+  for (const field of fields) if (isTimestampField(field.type)) next[field.id] = now
+  return next
+}
+
+function sameValue(a: unknown, b: unknown): boolean {
+  return a instanceof Date && b instanceof Date ? a.getTime() === b.getTime() : Object.is(a, b)
+}
 
 export function applyCommand(doc: TableDocument, command: TableCommand): TableDocument {
   switch (command.type) {
@@ -63,15 +78,29 @@ export function applyCommand(doc: TableDocument, command: TableCommand): TableDo
     case 'field/save': {
       const old = doc.fields.find((field) => field.id === command.field.id)
       const fields = [...doc.fields]
+      const now = new Date().toISOString()
       if (old) fields[fields.indexOf(old)] = command.field
       else fields.splice(command.index ?? fields.length, 0, command.field)
+      const needsConversion =
+        !old ||
+        old.type !== command.field.type ||
+        ((old.type === 'select' || old.type === 'multi_select') &&
+          old.options?.some((option) =>
+            command.field.options?.some((next) => next.id === option.id && next.label !== option.label),
+          ))
       return {
         ...doc,
         fields,
-        rows: doc.rows.map((row) => ({
-          ...row,
-          [command.field.id]: old ? convertValue(row[old.id], old, command.field) : defaultValue(command.field.type),
-        })),
+        rows: needsConversion
+          ? doc.rows.map((row) => {
+              const value = old
+                ? convertValue(row[old.id], old, command.field)
+                : isTimestampField(command.field.type)
+                  ? now
+                  : defaultValue(command.field.type)
+              return old && sameValue(value, row[old.id]) ? row : { ...row, [command.field.id]: value }
+            })
+          : doc.rows,
       }
     }
     case 'field/delete': {
@@ -92,6 +121,7 @@ export function applyCommand(doc: TableDocument, command: TableCommand): TableDo
           filters: doc.view.filters.filter((item) => item.fieldId !== id),
           sorts: doc.view.sorts.filter((item) => item.fieldId !== id),
           groupBy: doc.view.groupBy.fieldId === id ? { fieldId: '', collapsed: new Set() } : doc.view.groupBy,
+          pinnedFieldId: doc.view.pinnedFieldId === id ? '' : doc.view.pinnedFieldId,
           hiddenFields: remove(doc.view.hiddenFields),
           highlightDupes: remove(doc.view.highlightDupes),
           colStats,
@@ -113,12 +143,44 @@ export function applyCommand(doc: TableDocument, command: TableCommand): TableDo
     }
     case 'field/reorder':
       return { ...doc, fields: command.fields }
+    case 'field/resize': {
+      const field = doc.fields.find((item) => item.id === command.id)
+      if (!field || field.width === command.width) return doc
+      return {
+        ...doc,
+        fields: doc.fields.map((item) => (item.id === command.id ? { ...item, width: command.width } : item)),
+      }
+    }
     case 'rows/change': {
       const rows = reconcileRows(doc.rows, command.before, command.after)
-      return rows === doc.rows ? doc : { ...doc, rows }
+      if (rows === doc.rows) return doc
+      const originals = new Map(doc.rows.map((row) => [row.id, row]))
+      const editableFields = doc.fields.filter((field) => !isTimestampField(field.type))
+      const timestamps = doc.fields.filter((field) => isTimestampField(field.type))
+      const now = new Date().toISOString()
+      const updated = rows.map((row) => {
+        const original = originals.get(row.id)
+        if (!original) return withNewTimestamps(row, timestamps, now)
+        const changed = editableFields.some((field) => !sameValue(row[field.id], original[field.id]))
+        if (!changed) return original
+        const next = { ...row }
+        for (const field of timestamps) {
+          if (field.type === 'created_time') next[field.id] = original[field.id]
+          else {
+            const previous = Date.parse(String(original[field.id] ?? ''))
+            next[field.id] = new Date(
+              Math.max(Date.parse(now), Number.isNaN(previous) ? 0 : previous + 1),
+            ).toISOString()
+          }
+        }
+        return next
+      })
+      return updated.length === doc.rows.length && updated.every((row, index) => row === doc.rows[index])
+        ? doc
+        : { ...doc, rows: updated }
     }
     case 'rows/add':
-      return { ...doc, rows: [...doc.rows, command.row] }
+      return { ...doc, rows: [...doc.rows, withNewTimestamps(command.row, doc.fields, new Date().toISOString())] }
     case 'rows/move': {
       const { from, to } = command
       if (from === to || from < 0 || to < 0 || from >= doc.rows.length || to >= doc.rows.length) return doc
@@ -180,9 +242,5 @@ export function newField(doc: Pick<TableDocument, 'fields'>, anchor: string, off
   const index = doc.fields.findIndex((field) => field.id === anchor)
   return index < 0
     ? null
-    : { type: 'field/save', field: { id: newId(), label: '新列', type: 'text' }, index: index + offset }
-}
-
-export function rowForDocument(doc: TableDocument): RowData {
-  return createRow(doc.fields)
+    : { type: 'field/save', field: { id: newId(), label: '文本', type: 'text' }, index: index + offset }
 }

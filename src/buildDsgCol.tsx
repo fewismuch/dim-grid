@@ -1,10 +1,11 @@
-import { Button, Progress, Rate, Select } from 'antd'
+import { Button, InputNumber, Progress, Rate, Select } from 'antd'
 import dayjs from 'dayjs'
 import React, { lazy, Suspense, useLayoutEffect, useRef } from 'react'
 import type { CellProps, Column } from 'react-datasheet-grid'
 import { checkboxColumn, createTextColumn, floatColumn, intColumn, keyColumn, textColumn } from 'react-datasheet-grid'
 import s from './buildDsgCol.module.css'
 import LinkPopup from './components/LinkPopup'
+import MultilineTextCell from './components/MultilineTextCell'
 import { type FieldDef, type FieldOption, Ic, type RowData } from './constants'
 import { cellText, isEmptyValue, normalizeEmail, parseLinkValue, parseMultiValue, safeLink } from './model/table'
 
@@ -172,28 +173,28 @@ function ProgressCell({
   stopEditing,
   columnData,
 }: CellProps<RowData, { fieldId: string }>) {
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<React.ComponentRef<typeof InputNumber>>(null)
   const { fieldId } = columnData
   const val = Math.min(100, Math.max(0, Number(rowData[fieldId]) || 0))
   useLayoutEffect(() => {
     if (focus) {
-      inputRef.current?.focus()
-      inputRef.current?.select()
+      inputRef.current?.focus({ cursor: 'all' })
     }
   }, [focus])
   if (focus)
     return (
-      <input
+      <InputNumber
         ref={inputRef}
-        type="number"
+        variant="borderless"
+        controls={false}
         min={0}
         max={100}
         aria-label="进度百分比"
         value={val}
-        onChange={(e) => {
+        onChange={(value) => {
           setRowData({
             ...rowData,
-            [fieldId]: e.target.value === '' ? '' : String(Math.min(100, Math.max(0, Number(e.target.value) || 0))),
+            [fieldId]: value === null ? '' : String(Math.min(100, Math.max(0, Number(value) || 0))),
           })
         }}
         onKeyDown={(e) => {
@@ -229,6 +230,17 @@ export default function buildDsgCol(field: FieldDef): Partial<Column<RowData>> {
     isCellEmpty: ({ rowData }: { rowData: RowData }) => isEmptyValue(rowData[field.id], field),
   }
   switch (field.type) {
+    case 'created_time':
+    case 'modified_time':
+      return {
+        ...common,
+        component: ({ rowData }) => (
+          <span className={`${s.dateCell} ${s.dateCellValue}`}>{cellText(rowData[field.id], field)}</span>
+        ),
+        copyValue: ({ rowData }) => cellText(rowData[field.id], field),
+        pasteValue: ({ rowData }) => rowData,
+        deleteValue: ({ rowData }) => rowData,
+      }
     case 'email':
       return {
         ...scalarColumn(field.id, textColumn),
@@ -341,6 +353,7 @@ export default function buildDsgCol(field: FieldDef): Partial<Column<RowData>> {
               >
                 <Button
                   type="text"
+                  size="small"
                   icon={<Ic.ExtLink />}
                   className="link-cell-btn"
                   onClick={(e: React.MouseEvent) => e.stopPropagation()}
@@ -348,16 +361,17 @@ export default function buildDsgCol(field: FieldDef): Partial<Column<RowData>> {
                 />
               </LinkPopup>
               {linkUrl && (
-                <a
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<Ic.Link />}
                   href={linkUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="link-cell-open"
                   onClick={(e: React.MouseEvent) => e.stopPropagation()}
                   title="打开链接"
-                >
-                  <Ic.Link />
-                </a>
+                />
               )}
             </div>
           )
@@ -394,6 +408,14 @@ export default function buildDsgCol(field: FieldDef): Partial<Column<RowData>> {
           [field.id]:
             value.trim() && Number.isFinite(Number(value)) ? String(Math.max(0, Math.min(100, Number(value)))) : '',
         }),
+      }
+    case 'text':
+      return {
+        ...scalarColumn(field.id, textColumn),
+        ...common,
+        component: (props) => <MultilineTextCell {...props} fieldId={field.id} />,
+        pasteValue: ({ rowData, value }) => ({ ...rowData, [field.id]: String(value ?? '') }),
+        deleteValue: ({ rowData }) => ({ ...rowData, [field.id]: '' }),
       }
     default:
       return { ...scalarColumn(field.id, textColumn), ...common }

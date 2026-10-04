@@ -17,11 +17,14 @@ export type FieldType =
   | 'email'
   | 'rating'
   | 'progress'
+  | 'created_time'
+  | 'modified_time'
 export interface FieldDef {
   id: string
   label: string
   type: FieldType
   options?: FieldOption[]
+  width?: number
 }
 export interface RowData {
   id: string
@@ -48,6 +51,15 @@ export interface ModalState {
 }
 
 export const newId = (): string => crypto.randomUUID()
+export const isTimestampField = (type: FieldType): boolean => type === 'created_time' || type === 'modified_time'
+
+export function timestampText(value: unknown): string {
+  if (typeof value !== 'string' || !value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
 
 export function parseMultiValue(value: unknown): string[] {
   try {
@@ -81,6 +93,7 @@ export function safeLink(value: string): string | null {
 
 export function cellText(value: unknown, field?: FieldDef): string {
   if (value == null) return ''
+  if (field && isTimestampField(field.type)) return timestampText(value)
   if (field?.type === 'multi_select') return [...new Set(parseMultiValue(value))].sort().join(', ')
   if (field?.type === 'link') {
     const { text, link } = parseLinkValue(value)
@@ -102,14 +115,15 @@ export function defaultValue(type: FieldType): unknown {
   if (type === 'checkbox') return false
   if (type === 'multi_select') return '[]'
   if (type === 'link') return '{}'
-  if (['date', 'number', 'float'].includes(type)) return null
+  if (['date', 'number', 'float', 'created_time', 'modified_time'].includes(type)) return null
   return ''
 }
 
 export function createRow(fields: FieldDef[]): RowData {
+  const now = new Date().toISOString()
   return Object.fromEntries([
     ['id', newId()],
-    ...fields.map((field) => [field.id, defaultValue(field.type)]),
+    ...fields.map((field) => [field.id, isTimestampField(field.type) ? now : defaultValue(field.type)]),
   ]) as RowData
 }
 
@@ -185,7 +199,8 @@ export function processRows(
         if (emptyA) continue
         let cmp: number
         if (['number', 'float', 'rating', 'progress'].includes(field.type)) cmp = Number(va) - Number(vb)
-        else if (field.type === 'date') cmp = new Date(va as string).getTime() - new Date(vb as string).getTime()
+        else if (field.type === 'date' || isTimestampField(field.type))
+          cmp = new Date(va as string).getTime() - new Date(vb as string).getTime()
         else cmp = cellText(va, field).localeCompare(cellText(vb, field), 'zh', { numeric: true })
         if (cmp && Number.isFinite(cmp)) return dir === 'asc' ? cmp : -cmp
       }
@@ -204,6 +219,7 @@ export function convertValue(value: unknown, from: FieldDef, to: FieldDef): unkn
     if (to.type === 'multi_select') return JSON.stringify(parseMultiValue(value).map(renameOption))
     return value
   }
+  if (isTimestampField(to.type)) return new Date().toISOString()
   const text = cellText(value, from)
   if (!text) return defaultValue(to.type)
   switch (to.type) {

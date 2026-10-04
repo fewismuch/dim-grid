@@ -1,4 +1,4 @@
-import { Input, type InputRef } from 'antd'
+import { Button, Input, type InputRef, Tooltip } from 'antd'
 import type { ChangeEvent } from 'react'
 import { useCallback, useRef, useState } from 'react'
 import { Ic } from '../../constants'
@@ -36,16 +36,15 @@ export default function SearchPanel({ onSearch }: Props) {
   return (
     <>
       {!open && (
-        <button type="button" className="tb-btn" onClick={handleToggle}>
-          <Ic.Search />
-          搜索
-        </button>
+        <Tooltip title="搜索">
+          <Button type="text" icon={<Ic.Search />} onClick={handleToggle} />
+        </Tooltip>
       )}
       {open && (
         <Input
           ref={inputRef}
           className={styles.searchInput}
-          placeholder="搜索记录..."
+          placeholder="请输入关键词..."
           value={value}
           onChange={handleChange}
           onBlur={() => {

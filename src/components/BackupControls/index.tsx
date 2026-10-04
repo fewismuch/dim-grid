@@ -1,5 +1,5 @@
-import { ExportOutlined, ImportOutlined } from '@ant-design/icons'
-import { Button } from 'antd'
+import { ExportOutlined, ImportOutlined, MoreOutlined } from '@ant-design/icons'
+import { Button, Dropdown } from 'antd'
 import { lazy, Suspense, useRef, useState } from 'react'
 import type { TableDocument } from '../../model/document'
 import { deserializeDocument, serializeDocument } from '../../model/storage'
@@ -26,23 +26,28 @@ export default function BackupControls({
           <BackupDialog value={payload} onClose={() => setPayload(null)} />
         </Suspense>
       )}
-      <Button type="text" size="small" icon={<ExportOutlined />} onClick={() => exportBackup()}>
-        导出备份
-      </Button>
-      {recoveryRaw && (
-        <Button type="text" size="small" icon={<ExportOutlined />} onClick={() => exportBackup(recoveryRaw)}>
-          导出原始数据
-        </Button>
-      )}
-      <Button
-        type="text"
-        size="small"
-        icon={<ImportOutlined />}
-        onClick={() => input.current?.click()}
-        title="导入后可以撤销"
+      <Dropdown
+        trigger={['click']}
+        placement="bottomRight"
+        menu={{
+          items: [
+            { key: 'export', label: '导出备份', icon: <ExportOutlined />, onClick: () => exportBackup() },
+            ...(recoveryRaw
+              ? [
+                  {
+                    key: 'recovery',
+                    label: '导出原始数据',
+                    icon: <ExportOutlined />,
+                    onClick: () => exportBackup(recoveryRaw),
+                  },
+                ]
+              : []),
+            { key: 'import', label: '导入备份', icon: <ImportOutlined />, onClick: () => input.current?.click() },
+          ],
+        }}
       >
-        导入备份
-      </Button>
+        <Button type="text" icon={<MoreOutlined />} aria-label="更多操作" title="更多操作" />
+      </Dropdown>
       <input
         ref={input}
         type="file"

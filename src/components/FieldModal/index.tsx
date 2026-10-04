@@ -1,6 +1,7 @@
+import { CheckCircleTwoTone } from '@ant-design/icons'
 import { DndContext } from '@dnd-kit/core'
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { Button, Modal, Popover } from 'antd'
+import { Button, ColorPicker, Input, Modal } from 'antd'
 import { Fragment, useId, useState } from 'react'
 import {
   FIELD_TYPES,
@@ -25,7 +26,6 @@ function SortableOption({ index, opt, onChange, onDelete }: SortableOptionProps)
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: opt.id ?? String(index),
   })
-  const [pickerOpen, setPickerOpen] = useState(false)
 
   const style = {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
@@ -33,51 +33,39 @@ function SortableOption({ index, opt, onChange, onDelete }: SortableOptionProps)
     opacity: isDragging ? 0.3 : 1,
   }
 
-  const colorPicker = (
-    <div className={s.colorPicker}>
-      {OPT_COLORS.map((color, i) => (
-        <button
-          type="button"
-          aria-label={`选择颜色 ${color}`}
-          key={color}
-          onClick={() => {
-            onChange('color', color)
-            onChange('textColor', OPT_TEXT_COLORS[i])
-            setPickerOpen(false)
-          }}
-          className={`${s.colorSwatch} ${opt.color === color ? s.colorSwatchSelected : ''}`}
-          style={{ '--swatch-bg': color } as React.CSSProperties}
-        />
-      ))}
-    </div>
-  )
-
   return (
     <div ref={setNodeRef} className={s.optRow} style={style}>
-      <Popover
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        content={colorPicker}
-        trigger="click"
-        placement="bottomLeft"
-      >
-        <button
-          type="button"
-          aria-label="选项颜色"
-          className={s.optColor}
-          style={{ '--opt-color': opt.color } as React.CSSProperties}
-        />
-      </Popover>
-      <input
+      <ColorPicker
+        size="small"
+        value={opt.color}
+        presets={[{ label: '选项颜色', colors: OPT_COLORS }]}
+        onChangeComplete={(color) => {
+          const hex = color.toHexString()
+          onChange('color', hex)
+          const preset = OPT_COLORS.indexOf(hex)
+          const { r, g, b } = color.toRgb()
+          onChange(
+            'textColor',
+            preset >= 0 ? OPT_TEXT_COLORS[preset] : r * 0.299 + g * 0.587 + b * 0.114 > 160 ? '#262626' : '#fff',
+          )
+        }}
+      />
+      <Input
         className={s.optInput}
         value={opt.label}
         placeholder={`选项 ${index + 1}`}
         onChange={(e) => onChange('label', e.target.value)}
       />
       <Button type="text" danger aria-label="删除选项" icon={<Ic.Trash />} onClick={onDelete} />
-      <button type="button" aria-label="拖动选项" className={s.optDragHandle} {...listeners} {...attributes}>
-        <Ic.GripVertical />
-      </button>
+      <Button
+        type="text"
+        size="small"
+        aria-label="拖动选项"
+        className={s.optDragHandle}
+        icon={<Ic.GripVertical />}
+        {...listeners}
+        {...attributes}
+      />
     </div>
   )
 }
@@ -91,7 +79,7 @@ interface Props {
 
 export default function FieldModal({ field, onSave, onDelete, onClose }: Props) {
   const isEdit = !!field
-  const [label, setLabel] = useState(field?.label || '')
+  const [label, setLabel] = useState(field?.label ?? FIELD_TYPES[0].label)
   const [type, setType] = useState<FieldType>(field?.type || 'text')
   const labelId = useId()
   const [error, setError] = useState('')
@@ -141,14 +129,41 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
   const sections = [...new Set(FIELD_TYPES.map((f) => f.section))]
 
   return (
-    <Modal open title={isEdit ? '编辑列' : '新建列'} onCancel={onClose} footer={null} width={400}>
+    <Modal
+      open
+      title={isEdit ? '编辑列' : '新建列'}
+      onCancel={onClose}
+      footer={
+        <div className={s.footer}>
+          {isEdit && (
+            <Button
+              danger
+              icon={<Ic.Trash />}
+              onClick={() => {
+                onDelete()
+                onClose()
+              }}
+            >
+              删除列
+            </Button>
+          )}
+          <div className={s.footerActions}>
+            <Button onClick={onClose}>取消</Button>
+            <Button type="primary" onClick={handleSave}>
+              确定
+            </Button>
+          </div>
+        </div>
+      }
+      width={400}
+      zIndex={1100}
+    >
       <div className={s.body}>
         <label htmlFor={labelId} className={s.fieldLabel}>
           数据表列名
         </label>
-        <input
+        <Input
           id={labelId}
-          className={s.fieldInput}
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder="输入列名称"
@@ -161,17 +176,25 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
             <Fragment key={sec}>
               <div className={s.typeSectionLabel}>{sec}</div>
               {FIELD_TYPES.filter((f) => f.section === sec).map((ft) => (
-                <button
-                  type="button"
+                <Button
+                  block
+                  icon={<ft.Icon />}
+                  variant="outlined"
+                  className={s.typeButton}
                   aria-pressed={type === ft.key}
                   key={ft.key}
-                  className={`${s.typeOpt} ${type === ft.key ? s.typeOptSelected : ''}`}
-                  onClick={() => setType(ft.key)}
+                  onClick={() => {
+                    const previousDefault = FIELD_TYPES.find((item) => item.key === type)?.label
+                    if (!isEdit)
+                      setLabel((current) => (!current.trim() || current === previousDefault ? ft.label : current))
+                    setType(ft.key)
+                  }}
                 >
-                  <ft.Icon />
-                  {ft.label}
-                  {type === ft.key && <span className={s.typeCheck}>✓</span>}
-                </button>
+                  <span className={s.typeButtonContent}>
+                    {ft.label}
+                    {type === ft.key && <CheckCircleTwoTone twoToneColor="#52c41a" />}
+                  </span>
+                </Button>
               ))}
             </Fragment>
           ))}
@@ -221,26 +244,6 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
           {error}
         </p>
       )}
-      <div className={s.footer}>
-        {isEdit && (
-          <Button
-            danger
-            icon={<Ic.Trash />}
-            onClick={() => {
-              onDelete()
-              onClose()
-            }}
-          >
-            删除列
-          </Button>
-        )}
-        <div className={isEdit ? s.footerBtnsLeft : s.footerBtnsRight}>
-          <Button onClick={onClose}>取消</Button>
-          <Button type="primary" onClick={handleSave}>
-            确定
-          </Button>
-        </div>
-      </div>
     </Modal>
   )
 }

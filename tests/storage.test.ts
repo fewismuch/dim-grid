@@ -17,12 +17,15 @@ const memory = (raw = null) => {
 
 test('versioned storage round trip preserves dates, IDs, field order and complete view state', () => {
   const doc = initialDocument()
+  doc.view.name = '项目进度'
   doc.view.filters = [{ id: 'a', fieldId: 'f1', op: 'contains', value: '任务' }]
   doc.view.sorts = [{ id: 'b', fieldId: 'f3', dir: 'desc' }]
   doc.view.groupBy = { fieldId: 'f2', collapsed: new Set(['进行中']) }
   doc.view.hiddenFields.add('f3')
   doc.view.highlightDupes.add('f1')
   doc.view.colStats.f2 = '已填写数'
+  doc.view.pinnedFieldId = 'f2'
+  doc.fields[0].width = 60
   assert.deepEqual(deserializeDocument(serializeDocument(doc)), doc)
 })
 
@@ -39,15 +42,27 @@ test('structured values use arrays and objects on disk and legacy adapters in me
   assert.deepEqual(deserializeDocument(encoded), doc)
 })
 
+test('automatic time fields retain exact instants in backups', () => {
+  const doc = initialDocument()
+  doc.fields.push({ id: 'created', label: '新建时间', type: 'created_time' })
+  doc.rows[0].created = '2026-10-04T09:10:11.123Z'
+  assert.equal(deserializeDocument(serializeDocument(doc)).rows[0].created, doc.rows[0].created)
+  const invalid = JSON.parse(serializeDocument(doc))
+  invalid.rows[0].created = 'yesterday'
+  assert.throws(() => deserializeDocument(JSON.stringify(invalid)))
+})
+
 test('version 1 migration preserves local calendar dates and creates missing record/option IDs', () => {
   const doc = initialDocument()
   const source = JSON.parse(JSON.stringify(doc))
   source.version = 1
+  delete source.view.name
   delete source.rows[0].id
   delete source.fields[1].options[0].id
   const migrated = deserializeDocument(JSON.stringify(source))
   assert.equal(cellText(migrated.rows[0].f3), cellText(doc.rows[0].f3))
   assert.equal(migrated.rows[0].id, 'migrated-row-0')
+  assert.equal(migrated.view.name, '表格视图')
   assert.ok(migrated.fields[1].options[0].id)
 })
 
@@ -84,6 +99,12 @@ test('invalid identity, calendar, unsafe keys and invalid cell shapes are reject
     },
     (doc) => {
       doc.rows[0].f1 = { dangerous: 'shape' }
+    },
+    (doc) => {
+      doc.fields[0].width = -1
+    },
+    (doc) => {
+      doc.fields[0].width = 59
     },
   ]) {
     const source = JSON.parse(serializeDocument(initialDocument()))
