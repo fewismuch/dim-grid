@@ -1,9 +1,9 @@
 import { Input, type InputRef, message } from 'antd'
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { CellProps } from 'react-datasheet-grid'
-import s from '../../buildDsgCol.module.css'
 import type { RowData } from '../../model/table'
 import { normalizeEmail } from '../../model/table'
+import s from '../buildDsgCol.module.css'
 
 export default function EmailEditor({
   rowData,

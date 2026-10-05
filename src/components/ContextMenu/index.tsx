@@ -149,6 +149,7 @@ export const createContextMenuComponent =
       <Dropdown
         open
         placement="bottomLeft"
+        getPopupContainer={(trigger) => trigger.closest('.dim-grid') ?? document.body}
         onOpenChange={(open) => {
           if (!open) close()
         }}

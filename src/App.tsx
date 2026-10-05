@@ -1,27 +1,15 @@
-import { Alert, Button, Flex } from 'antd'
-import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  type Column,
-  type ContextMenuComponentProps,
-  DynamicDataSheetGrid as DataSheetGrid,
-} from 'react-datasheet-grid'
+import { Alert, Button } from 'antd'
+import type React from 'react'
+import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react'
+import type { ContextMenuComponentProps } from 'react-datasheet-grid'
 import 'react-datasheet-grid/dist/style.css'
 import s from './App.module.css'
-import buildDsgCol from './buildDsgCol'
-import BackupControls from './components/BackupControls'
 import ColumnMenu from './components/ColumnMenu'
 import { ContextMenu } from './components/ContextMenu'
-import FilterPanel from './components/FilterPanel/index'
-import GroupPanel from './components/GroupPanel/index'
-import RowHeightMenu from './components/RowHeightMenu'
-import SearchPanel from './components/SearchPanel/index'
-import SortPanel from './components/SortPanel/index'
-import StatsMenu from './components/StatsMenu/index'
-import TableSettings from './components/TableSettings/index'
-import ViewTitle from './components/ViewTitle'
+import GridBody from './components/GridBody'
+import GridFooter from './components/GridFooter'
+import GridToolbar from './components/GridToolbar'
 import {
-  calcStat,
-  FIELD_TYPES,
   type FieldDef,
   type FieldOption,
   type FieldType,
@@ -33,17 +21,24 @@ import {
   type RowData,
   type SortItem,
 } from './constants'
+import useColumnResize from './hooks/useColumnResize'
 import useFooterLayout from './hooks/useFooterLayout'
+import useGridColumns from './hooks/useGridColumns'
 import useGroupWindow from './hooks/useGroupWindow'
+import useRowReorder from './hooks/useRowReorder'
 import useTableDocument from './hooks/useTableDocument'
+import type { TableDocument } from './model/document'
 import { newField } from './model/document'
-import { groupGridHeight } from './model/groupWindow'
 import { ROW_HEIGHT } from './model/rowHeight'
-import { cellText, createRow, duplicateRow, duplicateValues, processRows } from './model/table'
+import { cellText, createRow, duplicateValues, processRows } from './model/table'
 
 const FieldModal = lazy(() => import('./components/FieldModal'))
 
 export interface DimGridProps {
+  /** Data used on first mount when this storage key has no saved document. */
+  initialData?: Pick<TableDocument, 'fields' | 'rows'> & { view?: TableDocument['view'] }
+  /** Read and save data in localStorage; defaults to true. */
+  enableLocalStorage?: boolean
   /** A unique key is recommended when several grids share the same origin. */
   storageKey?: string
   /** Height of the grid container; defaults to 100%. */
@@ -52,7 +47,14 @@ export interface DimGridProps {
   style?: React.CSSProperties
 }
 
-export default function App({ storageKey, height = '100%', className, style }: DimGridProps) {
+export default function App({
+  initialData,
+  enableLocalStorage = true,
+  storageKey,
+  height = '100%',
+  className,
+  style,
+}: DimGridProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const {
     document: table,
@@ -61,7 +63,7 @@ export default function App({ storageKey, height = '100%', className, style }: D
     saveError,
     recoveryRaw,
     replaceDocument,
-  } = useTableDocument(storageKey, rootRef)
+  } = useTableDocument(storageKey, rootRef, initialData, enableLocalStorage)
   const { fields, rows } = table
   const { filters, groupBy, sorts, colStats, hiddenFields, highlightDupes, pinnedFieldId, rowHeight } = table.view
   const rowPixels = ROW_HEIGHT[rowHeight].pixels
@@ -69,38 +71,7 @@ export default function App({ storageKey, height = '100%', className, style }: D
   const [modal, setModal] = useState<ModalState | null>(null)
   const [search, setSearch] = useState('')
   const [statsMenu, setStatsMenu] = useState<string | null>(null)
-  const [resizingColumnId, setResizingColumnId] = useState<string | null>(null)
-  const [columnPreview, setColumnPreview] = useState<Record<string, number>>({})
-  const resizeDrag = useRef<{ id: string; startX: number; startWidth: number; preview: number; min: number } | null>(
-    null,
-  )
-  useEffect(() => {
-    const move = (event: PointerEvent) => {
-      const drag = resizeDrag.current
-      if (!drag) return
-      const width = Math.min(1200, Math.max(drag.min, Math.round(drag.startWidth + event.clientX - drag.startX)))
-      drag.preview = width
-      setColumnPreview((current) => (current[drag.id] === width ? current : { ...current, [drag.id]: width }))
-    }
-    const stop = () => {
-      const drag = resizeDrag.current
-      if (!drag) return
-      resizeDrag.current = null
-      setResizingColumnId(null)
-      setColumnPreview((current) => {
-        const next = { ...current }
-        delete next[drag.id]
-        return next
-      })
-      if (drag.preview !== drag.startWidth) execute({ type: 'field/resize', id: drag.id, width: drag.preview })
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', stop)
-    return () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', stop)
-    }
-  }, [execute])
+  const { resizingColumnId, columnPreview, startResize } = useColumnResize(execute)
   const setFilters = useCallback((value: React.SetStateAction<FilterItem[]>) => setView('filters', value), [setView])
   const setSorts = useCallback((value: React.SetStateAction<SortItem[]>) => setView('sorts', value), [setView])
   const setGroupBy = useCallback((value: React.SetStateAction<GroupByState>) => setView('groupBy', value), [setView])
@@ -117,11 +88,6 @@ export default function App({ storageKey, height = '100%', className, style }: D
     [setView],
   )
 
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragOverIndex, setDragOverIndex] = useState(-1)
-  const dragFromRef = useRef(-1)
-  const dragOverRef = useRef(-1)
-  const dragRowsLenRef = useRef(0)
   const gridAreaRef = useRef<HTMLDivElement>(null)
   const footerScrollRef = useRef<HTMLDivElement>(null)
   const horizontalScroll = useRef(0)
@@ -141,7 +107,13 @@ export default function App({ storageKey, height = '100%', className, style }: D
     !sorts.length &&
     !filters.some((filter) => filter.fieldId && (filter.value || ['empty', 'not_empty'].includes(filter.op)))
 
-  const moveRow = useCallback((from: number, to: number) => execute({ type: 'rows/move', from, to }), [execute])
+  const { isDragging, dragOverIndex, dragFromRef, moveRow, handleGutterMouseDown } = useRowReorder(
+    execute,
+    gridAreaRef,
+    canReorderRows,
+    rows.length,
+    rowPixels,
+  )
 
   const toggleFieldVisibility = useCallback(
     (fieldId: string) => {
@@ -205,57 +177,6 @@ export default function App({ storageKey, height = '100%', className, style }: D
     },
     [execute],
   )
-
-  const handleGutterMouseDown = useCallback(
-    (rowIndex: number, e: React.MouseEvent) => {
-      if (!canReorderRows || e.button !== 0) return
-      e.preventDefault()
-      e.stopPropagation()
-      dragFromRef.current = rowIndex
-      dragOverRef.current = rowIndex
-      dragRowsLenRef.current = rows.length
-      setIsDragging(true)
-      setDragOverIndex(rowIndex)
-    },
-    [canReorderRows, rows.length],
-  )
-
-  useEffect(() => {
-    if (!isDragging) return
-    const rowH = rowPixels
-    const headerH = 38
-    const onMove = (e: MouseEvent) => {
-      const el = gridAreaRef.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      const scrollTop = (el.querySelector('.dsg-container') as HTMLElement | null)?.scrollTop ?? el.scrollTop
-      const relY = e.clientY - rect.top + scrollTop - headerH
-      const index = Math.max(0, Math.min(Math.floor(relY / rowH), dragRowsLenRef.current - 1))
-      dragOverRef.current = index
-      setDragOverIndex(index)
-    }
-    const onUp = () => {
-      const from = dragFromRef.current
-      const over = dragOverRef.current
-      if (from !== -1 && over !== -1 && from !== over) {
-        moveRow(from, over)
-      }
-      setIsDragging(false)
-      setDragOverIndex(-1)
-    }
-    const onCancel = () => {
-      setIsDragging(false)
-      setDragOverIndex(-1)
-    }
-    window.addEventListener('blur', onCancel)
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-    return () => {
-      window.removeEventListener('blur', onCancel)
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-    }
-  }, [isDragging, moveRow, rowPixels])
 
   const openAdd = useCallback(() => setModal({ mode: 'add' }), [])
   const openEdit = useCallback((fieldId: string) => setModal({ mode: 'edit', fieldId }), [])
@@ -367,104 +288,16 @@ export default function App({ storageKey, height = '100%', className, style }: D
     [fields, duplicates],
   )
 
-  const dsgColumns = useMemo(() => {
-    const buildFieldColumn = (field: FieldDef): Partial<Column<RowData>> => {
-      const column = buildDsgCol(field, visibleLines)
-      const Cell = column.component
-      return {
-        ...column,
-        component: Cell
-          ? (props) => (
-              <div style={{ display: 'contents', color: props.rowData.__cellColors?.[field.id] }}>
-                <Cell {...props} />
-              </div>
-            )
-          : undefined,
-        headerClassName: field.id === pinnedField?.id ? 'dsg-cell-pinned-left' : undefined,
-        cellClassName: field.id === pinnedField?.id ? 'dsg-cell-pinned-left' : undefined,
-        basis: columnPreview[field.id] ?? field.width ?? (field.type === 'checkbox' ? 80 : 180),
-        grow: 0,
-        shrink: 0,
-        minWidth: 60,
-        title: (
-          <div className="col-header">
-            <span className="col-header-label-box">
-              {React.createElement(FIELD_TYPES.find((f) => f.key === field.type)?.Icon || Ic.Text)}
-              <span className="col-header-label">{field.label}</span>
-            </span>
-            {renderFieldMenu(field)}
-            <button
-              type="button"
-              className="col-resize-handle"
-              aria-label={`调整${field.label}列宽`}
-              title="拖动调整列宽，方向键微调"
-              onPointerDown={(event) => {
-                if (event.button !== 0) return
-                event.preventDefault()
-                event.stopPropagation()
-                resizeDrag.current = {
-                  id: field.id,
-                  startX: event.clientX,
-                  startWidth: event.currentTarget.closest('.dsg-cell-header')?.getBoundingClientRect().width ?? 140,
-                  preview: event.currentTarget.closest('.dsg-cell-header')?.getBoundingClientRect().width ?? 140,
-                  min: 60,
-                }
-                setResizingColumnId(field.id)
-              }}
-              onMouseDown={(event) => event.stopPropagation()}
-              onKeyDown={(event) => {
-                if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
-                event.preventDefault()
-                event.stopPropagation()
-                const current = event.currentTarget.closest('.dsg-cell-header')?.getBoundingClientRect().width ?? 140
-                execute({
-                  type: 'field/resize',
-                  id: field.id,
-                  width: Math.min(1200, Math.max(60, Math.round(current + (event.key === 'ArrowRight' ? 16 : -16)))),
-                })
-              }}
-            />
-          </div>
-        ),
-      }
-    }
-    return orderedFields.map((field) => buildFieldColumn(field))
-  }, [orderedFields, pinnedField, columnPreview, renderFieldMenu, execute, visibleLines])
-
-  const addColumn = useMemo<Partial<Column<RowData>>>(
-    () => ({
-      id: 'add-column',
-      title: (
-        <Button
-          type="text"
-          block
-          icon={<Ic.Plus />}
-          aria-label="添加列"
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={openAdd}
-        />
-      ),
-      component: () => (
-        <Button
-          type="text"
-          block
-          aria-label="添加列"
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={openAdd}
-        />
-      ),
-      headerClassName: 'dsg-cell-add-column',
-      cellClassName: 'dsg-cell-add-column',
-      isCellEmpty: () => true,
-      disableKeys: true,
-      basis: 48,
-      grow: 1,
-      shrink: 0,
-      minWidth: 48,
-    }),
-    [openAdd],
-  )
-  const gridColumns = useMemo(() => [...dsgColumns, addColumn], [dsgColumns, addColumn])
+  const gridColumns = useGridColumns({
+    orderedFields,
+    pinnedFieldId,
+    columnPreview,
+    visibleLines,
+    renderFieldMenu,
+    startResize,
+    execute,
+    openAdd,
+  })
 
   const renderContextMenu = (viewRows: RowData[]) => (props: ContextMenuComponentProps) => {
     const row = viewRows[props.cursorIndex.row]
@@ -526,227 +359,64 @@ export default function App({ storageKey, height = '100%', className, style }: D
     execute({ type: 'rows/change', before, after }, group)
   }
 
-  const getGroupBadge = (groupKey: string, fieldId: string) => {
-    const field = fields.find((f) => f.id === fieldId)
-    if (field?.type === 'select' && groupKey) {
-      const opt = (field.options || []).find((o) => o.label === groupKey)
-      if (opt)
-        return (
-          <span className="select-tag" style={{ background: opt.color, color: opt.textColor }}>
-            {groupKey}
-          </span>
-        )
-    }
-    return <span className="group-badge group-badge-default">{groupKey || '（空）'}</span>
-  }
-
   return (
     <div ref={rootRef} className={`${s.app} dim-grid${className ? ` ${className}` : ''}`} style={{ ...style, height }}>
-      <Flex className={s.toolbar} align="center" justify="space-between" gap="small" wrap>
-        <ViewTitle name={table.view.name} onRename={(name) => setView('name', name)} />
-        <Flex className={s.toolbarActions} align="center" justify="flex-end" gap="0" wrap>
-          <TableSettings
-            fields={fields}
-            hiddenFields={hiddenFields}
-            onReorder={handleFieldsReorder}
-            onToggleHide={toggleFieldVisibility}
-            pinnedFieldId={pinnedFieldId}
-            onTogglePin={togglePin}
-            renderMenu={(field) => renderFieldMenu(field, true)}
-          />
-          <RowHeightMenu value={rowHeight} onChange={(value) => setView('rowHeight', value)} />
-
-          <FilterPanel
-            fields={fields}
-            filters={filters}
-            onAdd={() =>
-              setFilters((f) => [...f, { id: newId(), fieldId: fields[0]?.id || '', op: 'contains', value: '' }])
-            }
-            onUpdate={(id: string, key: string, val: string) =>
-              setFilters((f) => f.map((x: FilterItem) => (x.id === id ? { ...x, [key]: val } : x)))
-            }
-            onDelete={(id: string) => setFilters((f) => f.filter((x: FilterItem) => x.id !== id))}
-          />
-
-          <GroupPanel
-            fields={fields}
-            groupBy={groupBy}
-            onChange={setGroupBy}
-            onSortAsc={() => groupBy.fieldId && addSortForField(groupBy.fieldId, 'asc')}
-            onSortDesc={() => groupBy.fieldId && addSortForField(groupBy.fieldId, 'desc')}
-          />
-
-          <SortPanel
-            fields={fields}
-            sorts={sorts}
-            onAdd={() => setSorts((s) => [...s, { id: newId(), fieldId: fields[0]?.id || '', dir: 'asc' as const }])}
-            onUpdate={(id: string, key: string, val: string) =>
-              setSorts((s) => s.map((x: SortItem) => (x.id === id ? { ...x, [key]: val } : x)))
-            }
-            onDelete={(id: string) => setSorts((s) => s.filter((x: SortItem) => x.id !== id))}
-          />
-
-          <SearchPanel onSearch={setSearch} />
-          <BackupControls
-            document={table}
-            recoveryRaw={recoveryRaw}
-            onImport={(document) => {
-              replaceDocument(document)
-              setSearch('')
-            }}
-          />
-        </Flex>
-      </Flex>
+      <GridToolbar
+        table={table}
+        recoveryRaw={recoveryRaw}
+        setView={setView}
+        setFilters={setFilters}
+        setSorts={setSorts}
+        setGroupBy={setGroupBy}
+        onReorder={handleFieldsReorder}
+        onToggleHide={toggleFieldVisibility}
+        onTogglePin={togglePin}
+        onAddSortForField={addSortForField}
+        onSearch={setSearch}
+        onImport={(document) => {
+          replaceDocument(document)
+          setSearch('')
+        }}
+        renderFieldMenu={renderFieldMenu}
+      />
 
       {saveError && <Alert type="error" showIcon title={saveError} role="alert" />}
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: Prevent the grid's decorative add-column cells from being selected. */}
-      <div
-        className={s.gridArea}
-        ref={gridAreaRef}
-        onMouseDown={(event) => {
-          if ((event.target as HTMLElement).closest('.dsg-cell-add-column')) event.stopPropagation()
-        }}
-        onContextMenu={(event) => event.preventDefault()}
-        onScrollCapture={(event) => {
-          if ((event.target as HTMLElement).classList.contains('dsg-container'))
-            syncHorizontalScroll((event.target as HTMLElement).scrollLeft)
-        }}
-      >
-        {isDragging && (
-          <div
-            className="dsg-drag-indicator"
-            style={{ top: 38 + (dragOverIndex >= dragFromRef.current ? dragOverIndex + 1 : dragOverIndex) * rowPixels }}
-          />
-        )}
-        {groups ? (
-          <>
-            <div aria-hidden="true" style={{ height: groupRange.before }} />
-            {groups.slice(groupRange.start, groupRange.end).map(({ key, rows: gRows }) => (
-              <div key={key}>
-                <Button
-                  type="text"
-                  block
-                  icon={groupBy.collapsed.has(key) ? <Ic.ChevR /> : <Ic.ChevD />}
-                  className="group-header-row"
-                  aria-expanded={!groupBy.collapsed.has(key)}
-                  onClick={() => toggleGroup(key)}
-                >
-                  {getGroupBadge(key, groupBy.fieldId)}
-                  <span className={s.groupRowCount}>{gRows.length} 条记录</span>
-                </Button>
-                {!groupBy.collapsed.has(key) && (
-                  <DataSheetGrid
-                    height={groupGridHeight(gRows.length, groupRange.gridMaxHeight, rowPixels)}
-                    value={gRows}
-                    onChange={(newRows) => handleGridChange(gRows, newRows)}
-                    rowKey="id"
-                    createRow={() => ({ ...makeRow(), [groupBy.fieldId]: gRows[0][groupBy.fieldId] })}
-                    duplicateRow={({ rowData }) => duplicateRow(rowData)}
-                    contextMenuComponent={renderContextMenu(gRows)}
-                    columns={gridColumns}
-                    cellClassName={getCellClass}
-                    gutterColumn={gutterColumn}
-                    addRowsComponent={false}
-                    rowHeight={rowPixels}
-                    headerRowHeight={groupBy.collapsed.has(key) ? 0 : 38}
-                  />
-                )}
-              </div>
-            ))}
-            <div aria-hidden="true" style={{ height: groupRange.after }} />
-          </>
-        ) : (
-          <DataSheetGrid
-            height={groupRange.gridMaxHeight}
-            value={processedRows}
-            onChange={(newRows) => handleGridChange(processedRows, newRows)}
-            rowKey="id"
-            createRow={makeRow}
-            duplicateRow={({ rowData }) => duplicateRow(rowData)}
-            columns={gridColumns}
-            cellClassName={getCellClass}
-            gutterColumn={gutterColumn}
-            addRowsComponent={false}
-            rowHeight={rowPixels}
-            headerRowHeight={38}
-            contextMenuComponent={renderContextMenu(processedRows)}
-          />
-        )}
-        {processedRows.length === 0 && (
-          <div className={s.emptyHint}>
-            {rows.length ? '没有匹配的记录，请调整筛选条件或搜索内容' : '暂无记录，点击下方添加记录'}
-          </div>
-        )}
-        <Button type="text" block onClick={addRow} icon={<Ic.Plus />}>
-          添加记录
-        </Button>
-      </div>
+      <GridBody
+        gridAreaRef={gridAreaRef}
+        syncHorizontalScroll={syncHorizontalScroll}
+        isDragging={isDragging}
+        dragOverIndex={dragOverIndex}
+        dragFromIndex={dragFromRef.current}
+        rowPixels={rowPixels}
+        groups={groups}
+        groupRange={groupRange}
+        groupBy={groupBy}
+        fields={fields}
+        rows={rows}
+        processedRows={processedRows}
+        toggleGroup={toggleGroup}
+        handleGridChange={handleGridChange}
+        makeRow={makeRow}
+        renderContextMenu={renderContextMenu}
+        gridColumns={gridColumns}
+        getCellClass={getCellClass}
+        gutterColumn={gutterColumn}
+        addRow={addRow}
+      />
 
-      <div className={s.footer}>
-        <div
-          className={s.footerScroll}
-          ref={footerScrollRef}
-          onScroll={(event) => syncHorizontalScroll(event.currentTarget.scrollLeft)}
-        >
-          <div
-            className={s.footerColumns}
-            style={{
-              width: footerWidth,
-              minWidth:
-                88 +
-                orderedFields.reduce(
-                  (width, field) =>
-                    width + (columnPreview[field.id] ?? field.width ?? (field.type === 'checkbox' ? 80 : 180)),
-                  0,
-                ),
-            }}
-          >
-            <div className={s.footerGutter} aria-hidden="true" />
-            {orderedFields.map((field) => {
-              const isFirst = field.id === orderedFields[0]?.id
-              const stat = colStats[field.id] || (isFirst ? '记录总数' : '不展示')
-              const val = calcStat(stat, processedRows, field)
-              return (
-                <React.Fragment key={field.id}>
-                  <Button
-                    type="text"
-                    className={`${s.footerCol} ${val === null ? s.footerColEmpty : ''} ${pinnedField?.id === field.id ? s.footerPinned : ''}`}
-                    style={{
-                      flex: `0 0 ${columnPreview[field.id] ?? field.width ?? (field.type === 'checkbox' ? 80 : 180)}px`,
-                      minWidth: 60,
-                      fontSize: 12,
-                    }}
-                    aria-label={`${field.label}统计`}
-                    onClick={() => setStatsMenu(statsMenu === field.id ? null : field.id)}
-                  >
-                    <span className={s.footerContent}>
-                      {val !== null ? (
-                        <>
-                          <span className={s.footerColLabel}>{stat}</span>
-                          <span className={s.footerColVal}>{val}</span>
-                        </>
-                      ) : (
-                        <span className={s.footerAddStat}>+ 统计</span>
-                      )}
-                    </span>
-                    {statsMenu === field.id && (
-                      <StatsMenu
-                        current={stat}
-                        onSelect={(stat) => {
-                          setColStats((c) => ({ ...c, [field.id]: stat }))
-                          setStatsMenu(null)
-                        }}
-                        onClose={() => setStatsMenu(null)}
-                      />
-                    )}
-                  </Button>
-                </React.Fragment>
-              )
-            })}
-            <div className={s.footerAdd} aria-hidden="true" />
-          </div>
-        </div>
-      </div>
+      <GridFooter
+        orderedFields={orderedFields}
+        pinnedFieldId={pinnedFieldId}
+        columnPreview={columnPreview}
+        processedRows={processedRows}
+        colStats={colStats}
+        setColStats={setColStats}
+        statsMenu={statsMenu}
+        setStatsMenu={setStatsMenu}
+        footerScrollRef={footerScrollRef}
+        footerWidth={footerWidth}
+        syncHorizontalScroll={syncHorizontalScroll}
+      />
 
       {modal && (
         <Suspense

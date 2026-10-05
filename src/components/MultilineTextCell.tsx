@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { CellProps } from 'react-datasheet-grid'
-import s from '../buildDsgCol.module.css'
 import type { RowData } from '../model/table'
+import s from './buildDsgCol.module.css'
 
 export default function MultilineTextCell({
   rowData,

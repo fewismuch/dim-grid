@@ -29,7 +29,7 @@ import {
   TableOutlined,
   UnorderedListOutlined,
 } from '@ant-design/icons'
-import type { FC } from 'react'
+import type { ComponentType, FC } from 'react'
 
 export type {
   FieldDef,
@@ -49,36 +49,40 @@ const iconStyle = (size: number) => ({ fontSize: size })
 
 type IconComponent = FC<{ style?: React.CSSProperties }>
 
-export const Ic: Record<string, IconComponent> = {
-  Table: (props) => <TableOutlined {...props} style={{ ...iconStyle(16), ...props?.style }} />,
-  Filter: (props) => <FilterOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  Group: (props) => <BlockOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  Sort: (props) => <SwapOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  Search: (props) => <SearchOutlined {...props} style={{ ...iconStyle(13), ...props?.style }} />,
-  Plus: (props) => <PlusOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  X: (props) => <CloseOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  Settings: (props) => <SettingOutlined {...props} style={{ ...iconStyle(13), ...props?.style }} />,
-  Trash: (props) => <DeleteOutlined {...props} style={{ ...iconStyle(13), ...props?.style }} />,
-  ChevD: (props) => <DownOutlined {...props} style={{ ...iconStyle(12), ...props?.style }} />,
-  ChevR: (props) => <RightOutlined {...props} style={{ ...iconStyle(12), ...props?.style }} />,
-  Text: (props) => <FontSizeOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  Hash: (props) => <NumberOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  Cal: (props) => <CalendarOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  Check: (props) => <CheckOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  List: (props) => <UnorderedListOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  CheckSquare: (props) => <CheckSquareOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  CreatedTime: (props) => <ClockCircleOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  ModifiedTime: (props) => <HistoryOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  Mail: (props) => <MailOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  Star: (props) => <StarOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  Progress: (props) => <BarChartOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  GripVertical: (props) => <HolderOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  Eye: (props) => <EyeOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  EyeOff: (props) => <EyeInvisibleOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  Link: (props) => <LinkOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-  ExtLink: (props) => <ExportOutlined {...props} style={{ ...iconStyle(13), ...props?.style }} />,
-  Edit: (props) => <EditOutlined {...props} style={{ ...iconStyle(14), ...props?.style }} />,
-}
+const icon =
+  (Comp: ComponentType<any>, size: number): IconComponent =>
+  (props) => <Comp {...props} style={{ ...iconStyle(size), ...props?.style }} />
+
+export const Ic = {
+  Table: icon(TableOutlined, 16),
+  Filter: icon(FilterOutlined, 14),
+  Group: icon(BlockOutlined, 14),
+  Sort: icon(SwapOutlined, 14),
+  Search: icon(SearchOutlined, 13),
+  Plus: icon(PlusOutlined, 14),
+  X: icon(CloseOutlined, 14),
+  Settings: icon(SettingOutlined, 13),
+  Trash: icon(DeleteOutlined, 13),
+  ChevD: icon(DownOutlined, 12),
+  ChevR: icon(RightOutlined, 12),
+  Text: icon(FontSizeOutlined, 14),
+  Hash: icon(NumberOutlined, 14),
+  Cal: icon(CalendarOutlined, 14),
+  Check: icon(CheckOutlined, 14),
+  List: icon(UnorderedListOutlined, 14),
+  CheckSquare: icon(CheckSquareOutlined, 14),
+  CreatedTime: icon(ClockCircleOutlined, 14),
+  ModifiedTime: icon(HistoryOutlined, 14),
+  Mail: icon(MailOutlined, 14),
+  Star: icon(StarOutlined, 14),
+  Progress: icon(BarChartOutlined, 14),
+  GripVertical: icon(HolderOutlined, 14),
+  Eye: icon(EyeOutlined, 14),
+  EyeOff: icon(EyeInvisibleOutlined, 14),
+  Link: icon(LinkOutlined, 14),
+  ExtLink: icon(ExportOutlined, 13),
+  Edit: icon(EditOutlined, 14),
+} satisfies Record<string, IconComponent>
 
 export interface FieldTypeDef {
   key: FieldType

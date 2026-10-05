@@ -3,11 +3,11 @@ import dayjs from 'dayjs'
 import React, { lazy, Suspense, useLayoutEffect, useRef } from 'react'
 import type { CellProps, Column } from 'react-datasheet-grid'
 import { checkboxColumn, createTextColumn, floatColumn, intColumn, keyColumn, textColumn } from 'react-datasheet-grid'
+import { type FieldDef, type FieldOption, Ic, type RowData } from '../constants'
+import { cellText, isEmptyValue, normalizeEmail, parseLinkValue, parseMultiValue, safeLink } from '../model/table'
 import s from './buildDsgCol.module.css'
-import LinkPopup from './components/LinkPopup'
-import MultilineTextCell from './components/MultilineTextCell'
-import { type FieldDef, type FieldOption, Ic, type RowData } from './constants'
-import { cellText, isEmptyValue, normalizeEmail, parseLinkValue, parseMultiValue, safeLink } from './model/table'
+import LinkPopup from './LinkPopup'
+import MultilineTextCell from './MultilineTextCell'
 
 // Field descriptors choose the scalar type; rows have dynamic keys, so adapt that
 // boundary once while keeping all grid callbacks typed as whole records.
@@ -149,8 +149,8 @@ MultiSelectCell.displayName = 'MultiSelectCell'
 
 /* ── DatePicker cell component ── */
 
-const EmailEditor = lazy(() => import('./components/EmailEditor'))
-const DateEditor = lazy(() => import('./components/DateEditor'))
+const EmailEditor = lazy(() => import('./EmailEditor'))
+const DateEditor = lazy(() => import('./DateEditor'))
 function createDateCell(fieldId: string) {
   const DateCell = (props: CellProps<RowData, unknown>) => {
     const text = cellText(props.rowData[fieldId], { id: fieldId, label: '', type: 'date' })
@@ -341,9 +341,22 @@ export default function buildDsgCol(field: FieldDef, visibleLines: 1 | 2 | 5 = 1
           const linkUrl = safeLink(data.link)
           return (
             <div className={`link-cell ${active ? 'link-cell-active' : ''}`}>
-              <span className="link-cell-text" title={displayText}>
-                {displayText || <span className={s.linkCellPlaceholder}> </span>}
-              </span>
+              {linkUrl ? (
+                <a
+                  className="link-cell-text link-cell-anchor"
+                  href={linkUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={displayText}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {displayText}
+                </a>
+              ) : (
+                <span className="link-cell-text" title={displayText}>
+                  {displayText || <span className={s.linkCellPlaceholder}> </span>}
+                </span>
+              )}
               <LinkPopup
                 text={data.text || ''}
                 link={data.link || ''}

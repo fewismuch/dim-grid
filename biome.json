@@ -14,7 +14,8 @@
       "recommended": true,
       "correctness": {
         "noUnusedVariables": "warn",
-        "noUnknownProperty": "error"
+        "noUnknownProperty": "error",
+        "noUnknownPseudoClass": "off"
       },
       "suspicious": {
         "noExplicitAny": "off",

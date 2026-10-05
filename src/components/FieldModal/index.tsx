@@ -1,7 +1,7 @@
 import { CheckCircleTwoTone } from '@ant-design/icons'
 import { DndContext } from '@dnd-kit/core'
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { Button, ColorPicker, Input, Modal } from 'antd'
+import { Button, ColorPicker, Input, Modal, Alert } from 'antd'
 import { Fragment, useId, useState } from 'react'
 import {
   FIELD_TYPES,
@@ -79,7 +79,7 @@ interface Props {
 
 export default function FieldModal({ field, onSave, onDelete, onClose }: Props) {
   const isEdit = !!field
-  const [label, setLabel] = useState(field?.label ?? FIELD_TYPES[0].label)
+  const [label, setLabel] = useState(field?.label || '')
   const [type, setType] = useState<FieldType>(field?.type || 'text')
   const labelId = useId()
   const [error, setError] = useState('')
@@ -183,12 +183,7 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
                   className={s.typeButton}
                   aria-pressed={type === ft.key}
                   key={ft.key}
-                  onClick={() => {
-                    const previousDefault = FIELD_TYPES.find((item) => item.key === type)?.label
-                    if (!isEdit)
-                      setLabel((current) => (!current.trim() || current === previousDefault ? ft.label : current))
-                    setType(ft.key)
-                  }}
+                  onClick={() => setType(ft.key)}
                 >
                   <span className={s.typeButtonContent}>
                     {ft.label}
@@ -237,7 +232,7 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
         )}
       </div>
       {field && field.type !== type && (
-        <p className={s.hint}>修改类型将转换已有数据，无法转换的值会清空；保存后可撤销恢复。</p>
+        <Alert className={s.hint} title="修改类型将转换已有数据，无法转换的值会清空；保存后可撤销恢复。" type="warning" showIcon />
       )}
       {error && (
         <p role="alert" className={s.error}>

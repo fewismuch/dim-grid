@@ -1,80 +1,91 @@
 # dim-grid
 
-可嵌入其他 React 项目的多维表格组件，基于 React、Ant Design 和 react-datasheet-grid。支持字段配置、筛选、排序、分组、搜索、重复值高亮、统计、本机自动保存、撤销重做和 JSON 备份。
+[English](README.en.md) | 简体中文
 
-## 作为组件使用
+可嵌入 React 应用的多维表格组件。支持编辑字段和记录、筛选与排序、分组、搜索、列统计、撤销重做，以及 JSON 导入导出。
 
-项目需提供 React 18 或 19 及 React DOM。先打包本仓库，再从生成的 tarball 安装：
+## 功能
+
+- **13 种字段类型**：文本、数字、小数、单选、多选、链接、日期、复选框、邮箱、评分、进度、新建时间和修改时间。
+- **表格视图**：筛选、排序、分组、搜索、固定和隐藏列、调整列宽与行高、重复值高亮、列统计。
+- **记录操作**：添加、编辑、复制、拖动排序，以及撤销和重做。
+- **数据保存**：可选的浏览器本地存储、JSON 备份导入导出。
+
+## 运行演示
+
+需要 Node.js 22.18+ 和 pnpm。
+
+```sh
+pnpm install
+pnpm dev
+```
+
+打开终端显示的本地地址。演示数据位于 [`src/demoData.ts`](src/demoData.ts)，包含全部 13 种字段和五条可编辑记录。演示页使用 `dim-grid.demo` 作为本地存储键；如果之前编辑过演示数据，刷新后会优先显示保存的内容。
+
+## 在 React 项目中使用
+
+项目需要提供 React 18 或 19 和 React DOM。当前仓库可先打包成 tarball，再安装到使用方项目：
 
 ```sh
 pnpm pack
-# 在使用方项目中：pnpm add /路径/dim-grid-1.0.0.tgz
+# 在使用方项目中运行：
+pnpm add /path/to/dim-grid-1.0.0.tgz
 ```
 
-在使用方应用中引入样式，并给组件一个有确定高度的容器：
+引入组件和样式，提供字段、记录以及一个确定的高度：
 
 ```tsx
 import { DimGrid } from 'dim-grid'
 import 'dim-grid/style.css'
 
+const initialData = {
+  fields: [
+    { id: 'name', label: '姓名', type: 'text' as const },
+    { id: 'done', label: '已完成', type: 'checkbox' as const },
+  ],
+  rows: [
+    { id: 'person-1', name: '张三', done: false },
+    { id: 'person-2', name: '李四', done: true },
+  ],
+}
+
 export function RecordsPage() {
-  return <DimGrid height={600} storageKey="records-page.document" />
+  return <DimGrid height={600} storageKey="records-page.document" initialData={initialData} />
 }
 ```
 
-`height` 默认是 `100%`，此时父容器必须有确定高度。`storageKey` 默认是 `dim-grid.document`；同一域名下放置多个表格时，每个实例应使用不同的键，避免相互覆盖。也可传 `className` 和 `style` 控制外层容器。组件在浏览器 localStorage 中自动保存，支持 JSON 备份；数据目前不能直接通过受控 props 注入。公共入口还导出 `TableDocument`、`FieldDef` 等类型及文档序列化函数。库包内包含已修补的表格依赖代码，使用方不需要执行仓库中的补丁脚本。
+`initialData` 只在首次挂载时用于初始化。每个字段和记录都需要唯一的 `id`；记录中的值使用字段 ID 作键。默认情况下，组件会先读取 `storageKey` 对应的本地数据，因此已有保存内容会覆盖 `initialData`。修改 `initialData` 属性也不会重置正在编辑的表格。
 
-`pnpm build` 仍构建独立演示页；`pnpm build:lib` 生成 ESM、CommonJS、CSS 和 TypeScript 声明。源码依赖 Node.js 22.18+，库使用方按其自身构建工具要求配置。
+如果不需要浏览器本地存储，设置 `enableLocalStorage={false}`。此时组件从 `initialData` 开始，不读取或写入 `localStorage`，编辑内容只保留在当前组件实例中；JSON 导入导出仍然可用。
 
-## 开发
+### 组件属性
 
-需要 Node.js 22.18 或更新版本，以及 pnpm。
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `initialData` | `{ fields, rows, view? }` | 内置示例数据 | 首次挂载时的表格内容；`view` 可选。 |
+| `enableLocalStorage` | `boolean` | `true` | 是否读取和保存到浏览器本地存储。 |
+| `storageKey` | `string` | `dim-grid.document` | 本地存储键；同一域名下的多个表格应使用不同的键。 |
+| `height` | CSS 高度值 | `100%` | 表格高度；使用 `100%` 时，父容器需有确定高度。 |
+| `className`、`style` | React 容器属性 | — | 设置外层容器样式。 |
+
+### 字段值约定
+
+字段类型定义在 [`src/model/table.ts`](src/model/table.ts)。数字与小数传数字，复选框传布尔值，日期在内存中使用 `Date`。多选和链接在内存中分别使用 JSON 数组字符串和 JSON 对象字符串；新建与修改时间使用 ISO 时间字符串。评分和进度可参照 [`src/demoData.ts`](src/demoData.ts) 中的示例值。
+
+公共入口还导出 `TableDocument`、`FieldDef`、`RowData` 等类型，以及 `serializeDocument`、`deserializeDocument`。若数据来自导出的 JSON，可先用 `deserializeDocument(json)` 转为组件所需的数据结构。
+
+## 开发与构建
 
 ```sh
-pnpm install
-pnpm dev
-pnpm check
+pnpm check      # 类型检查、Lint、测试和构建
+pnpm build      # 独立演示页
+pnpm build:lib  # ESM、CommonJS、CSS 和 TypeScript 声明
 ```
 
-`pnpm check` 依次执行严格类型检查、Biome 检查、回归测试和生产构建。也可单独运行 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`。
+## GitHub Pages 部署
 
-## 代码结构
+推送到 `main` 后，[Pages 工作流](.github/workflows/pages.yml)会检查代码、构建演示页并自动部署。也可以在 GitHub 的 **Actions** 页面手动运行该工作流。部署地址为 <https://fewismuch.github.io/dim-grid/>。
 
-- `src/model/table.ts`：领域类型、记录 ID、默认值、视图处理、记录合并、字段转换和统计；不依赖 React。
-- `src/model/document.ts`：字段、记录、视图的原子命令与最多 50 步撤销历史。
-- `src/model/storage.ts`：版本化序列化、导入校验、迁移和本地存储。
-- `src/model/groupWindow.ts` 与 `src/hooks/useGroupWindow.ts`：分组窗口计算与滚动观察。
-- `src/hooks/useTableDocument.ts`：保存、撤销重做、快捷键和多页面冲突提示。
-- `src/App.tsx`：界面编排。底层记录是唯一数据源，筛选、排序和分组只产生派生视图。
-- `src/buildDsgCol.tsx`：字段到表格列的适配及自定义编辑器。剪贴板回调必须返回完整记录。
-- `src/components/`：工具栏面板、字段编辑器及操作菜单。
-- `tests/`：领域逻辑和实际列适配器的回归测试。
+首次使用时，在仓库的 **Settings → Pages → Build and deployment → Source** 中选择 **GitHub Actions**。确认仓库允许运行 GitHub Actions；工作流使用仓库自带的 `GITHUB_TOKEN`，无需配置额外的 Secret。拉取请求只运行检查和构建，不会部署。
 
-记录使用稳定的 `id`；新增、复制记录必须生成新 ID。字段使用独立 ID，字段名可以修改。选项也有稳定 ID，重命名会同步已有选择。日期在内存中使用 `Date`；多选和链接暂时保留 JSON 字符串格式，由统一解析函数处理。
-
-## 行为约定
-
-- 排序按字段类型比较，空值始终放在末尾；复选框未勾选计为空，数字 `0` 计为已填写。
-- 筛选、排序、分组中的编辑、插入、复制和删除按记录 ID 合并回原数据。
-- 手动行排序仅在普通视图启用；可以拖动行号处的手柄，或聚焦手柄后用上下方向键调整。
-- 列标题右边缘可拖动调整宽度（最窄 60px），聚焦手柄后可用左右方向键微调；列宽随表格保存并可撤销。
-- “表格设置”中的列操作与表头共用菜单；固定按钮可将当前一列固定在左侧，再次点击取消。
-- 底部常显记录数；将鼠标移到该区域可展开统计栏，点击记录数可固定展开，键盘也可操作。
-- 更改字段类型会转换已有数据，无法转换的值会清空；弹窗会提示这一行为。
-- 搜索框按 Esc 清除查询并关闭；分组标题、统计和列操作支持键盘访问。
-
-## 保存与恢复
-
-编辑后约 250ms 保存到当前浏览器的 localStorage，刷新会恢复字段、记录及视图设置。正常保存不常驻提示，失败时显示错误。删除字段、转换类型和导入备份均可撤销；历史最多 50 步，仅保留在当前页面会话，刷新后清空。撤销／重做通过快捷键操作：聚焦表格组件内的非编辑控件时可使用 Ctrl / ⌘ Z、Ctrl / ⌘ Shift Z。
-
-右侧“更多操作”中的“导出备份”可下载 JSON 或复制内容另存为 `.json`；“导入备份”接受不超过 20 MB 的文件并校验格式。导入会替换当前表格，可以撤销。版本 2 使用日期 `YYYY-MM-DD`、多选数组和链接对象；内存编辑器仍通过既有适配层读写。版本 1 会自动迁移。
-
-遇到损坏或未来版本的数据会暂停自动保存，保留原始内容并提供“导出原始数据”。存储不足／不可访问会明确提示；另一页面修改同一存储时，此页暂停写入，需导出备份后刷新。当前没有后端或多人协作，浏览器清理数据会删除本机保存，重要数据请另存备份。
-
-日期编辑支持日历选择、清空与撤销。邮箱直接编辑和粘贴会校验基本格式，无效输入保留原值。大量分组仅挂载滚动视窗附近的表格；`pnpm analyze` 可查看构建依赖体积。
-
-完整问题与修复记录见 [项目审查报告](docs/review.md)。
-
-固定列显示在行号列右侧。`scripts/patch-grid.mjs` 为当前锁定的 react-datasheet-grid 4.11.6 补充左侧固定列的虚拟化、点击定位和选中框处理，启动和构建时自动应用；升级该依赖时需同步检查此补丁。
-
-工具栏左侧视图名称支持点击编辑，Enter 或失焦保存、Esc 取消，刷新和备份均保留名称。目前只维护一个视图。工具栏操作靠右，普通按钮、输入框、颜色选择器和菜单直接使用 Ant Design；CSS 保留布局与表格、拖拽所需样式，不另建控件外观。
+项目基于 Vite、React、Ant Design 和 react-datasheet-grid。许可证为 [MIT](LICENSE)。

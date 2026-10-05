@@ -9,7 +9,7 @@ const server = await createServer({
   appType: 'custom',
 })
 after(() => server.close())
-const { default: buildDsgCol } = await server.ssrLoadModule('/src/buildDsgCol.tsx')
+const { default: buildDsgCol } = await server.ssrLoadModule('/src/components/buildDsgCol.tsx')
 const options = [
   { label: '甲', color: '#fff', textColor: '#000' },
   { label: '乙', color: '#fff', textColor: '#000' },

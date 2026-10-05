@@ -160,3 +160,16 @@ test('custom storage keys keep embedded grids independent', () => {
   assert.equal(loadDocument(storage, initialDocument(), 'grid.second').document.view.name, '第二张表')
   assert.equal(storage.getItem(STORAGE_KEY), null)
 })
+
+test('caller-provided initial data is used only without a saved document', () => {
+  const storage = memory()
+  const supplied = initialDocument()
+  supplied.fields = [{ id: 'name', label: '姓名', type: 'text' }]
+  supplied.rows = [{ id: 'person-1', name: '张三' }]
+  assert.deepEqual(loadDocument(storage, supplied).document, supplied)
+
+  const saved = initialDocument()
+  saved.rows[0].f1 = '已保存'
+  assert.equal(saveDocument(storage, saved), null)
+  assert.deepEqual(loadDocument(storage, supplied).document, saved)
+})

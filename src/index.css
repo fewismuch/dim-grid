@@ -3,11 +3,11 @@
 .dim-grid *::before,
 .dim-grid *::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 .dim-grid {
+  margin: 0;
+  padding: 0;
   color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--color-bg);
@@ -123,11 +123,22 @@
 }
 .link-cell-text {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 14px;
   color: inherit;
+}
+.link-cell-anchor {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.link-cell-anchor:hover,
+.link-cell-anchor:focus-visible {
+  color: var(--color-primary);
+  text-decoration: underline;
 }
 .link-cell-btn,
 .link-cell-open {
@@ -227,7 +238,31 @@
   color: var(--color-text-placeholder);
 }
 .dsg-checkbox {
-  accent-color: var(--color-primary);
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background: var(--color-bg);
+  cursor: pointer;
+}
+.dsg-checkbox:checked {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+.dsg-checkbox:checked::after {
+  content: "";
+  display: block;
+  width: 5px;
+  height: 9px;
+  margin: 1px 0 0 5px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.dsg-checkbox:disabled {
+  cursor: default;
+  opacity: 0.5;
 }
 .dsg-active-cell-focus {
   box-shadow: 0 2px 5px var(--color-shadow);

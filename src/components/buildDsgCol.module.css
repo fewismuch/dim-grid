@@ -111,6 +111,7 @@
 .selectTagSmall {
   display: inline-block;
   padding: 0 6px;
+  margin-inline-end: 4px;
   border-radius: 99px;
   font-size: 11px;
   white-space: nowrap;

@@ -1,15 +1,21 @@
 import type { RefObject, SetStateAction } from 'react'
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
-import type { TableCommand, TableView } from '../model/document'
-import { historyReducer, historyState, initialDocument } from '../model/document'
+import type { TableCommand, TableDocument, TableView } from '../model/document'
+import { emptyView, historyReducer, historyState, initialDocument } from '../model/document'
 import { loadDocument, STORAGE_KEY, saveDocument } from '../model/storage'
 
-function load(storageKey: string) {
+type InitialData = Pick<TableDocument, 'fields' | 'rows'> & { view?: TableView }
+
+function load(storageKey: string, initialData?: InitialData, enableLocalStorage = true) {
+  const fallback = initialData
+    ? { fields: initialData.fields, rows: initialData.rows, view: initialData.view ?? emptyView() }
+    : initialDocument()
+  if (!enableLocalStorage) return { document: fallback, error: null, writable: true, recoveryRaw: null }
   try {
-    return loadDocument(window.localStorage, initialDocument(), storageKey)
+    return loadDocument(window.localStorage, fallback, storageKey)
   } catch {
     return {
-      document: initialDocument(),
+      document: fallback,
       error: '无法访问浏览器存储，请导出备份。',
       writable: false,
       recoveryRaw: null,
@@ -17,8 +23,13 @@ function load(storageKey: string) {
   }
 }
 
-export default function useTableDocument(storageKey = STORAGE_KEY, rootRef?: RefObject<HTMLDivElement | null>) {
-  const [loaded] = useState(() => load(storageKey))
+export default function useTableDocument(
+  storageKey = STORAGE_KEY,
+  rootRef?: RefObject<HTMLDivElement | null>,
+  initialData?: InitialData,
+  enableLocalStorage = true,
+) {
+  const [loaded] = useState(() => load(storageKey, initialData, enableLocalStorage))
   const [history, dispatch] = useReducer(historyReducer, loaded.document, historyState)
   const [saveError, setSaveError] = useState(loaded.error)
   const writable = useRef(loaded.writable)
@@ -54,7 +65,7 @@ export default function useTableDocument(storageKey = STORAGE_KEY, rootRef?: Ref
 
   useEffect(() => {
     latest.current = history.present
-    if (!writable.current) return
+    if (!enableLocalStorage || !writable.current) return
     const save = () => {
       if (!writable.current) return
       try {
@@ -71,10 +82,11 @@ export default function useTableDocument(storageKey = STORAGE_KEY, rootRef?: Ref
       window.clearTimeout(timer)
       window.removeEventListener('pagehide', save)
     }
-  }, [history.present, storageKey])
+  }, [history.present, storageKey, enableLocalStorage])
 
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
+      if (!enableLocalStorage) return
       if (event.key !== storageKey) return
       writable.current = false
       setSaveError('另一页面修改了本地表格，已暂停此页保存。请导出本页备份并刷新。')
@@ -98,7 +110,7 @@ export default function useTableDocument(storageKey = STORAGE_KEY, rootRef?: Ref
       window.removeEventListener('storage', onStorage)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [undo, redo, storageKey, rootRef])
+  }, [undo, redo, storageKey, rootRef, enableLocalStorage])
 
   return {
     document: history.present,

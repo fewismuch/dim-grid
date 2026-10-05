@@ -3,8 +3,8 @@ import dayjs from 'dayjs'
 import type { ComponentRef } from 'react'
 import { useLayoutEffect, useRef } from 'react'
 import type { CellProps } from 'react-datasheet-grid'
-import s from '../../buildDsgCol.module.css'
 import type { RowData } from '../../model/table'
+import s from '../buildDsgCol.module.css'
 
 export default function DateEditor({
   rowData,
