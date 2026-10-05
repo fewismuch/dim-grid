@@ -31,19 +31,32 @@ export default function useGridColumns({
 }: Options) {
   const t = useT()
   const pinnedField = orderedFields.find((field) => field.id === pinnedFieldId)
+  // Keep cell component identities stable when row edits only change auto widths
+  // or the header menu. Recreating a component here remounts every visible cell.
+  const fieldColumns = useMemo(
+    () =>
+      orderedFields.map((field): Partial<Column<RowData>> => {
+        const column = buildDsgCol(field, visibleLines, t)
+        const Cell = column.component
+        return {
+          ...column,
+          component: Cell
+            ? (props) => (
+                <div style={{ display: 'contents', color: props.rowData.__cellColors?.[field.id] }}>
+                  <Cell {...props} />
+                </div>
+              )
+            : undefined,
+        }
+      }),
+    [orderedFields, visibleLines, t],
+  )
+
   const dsgColumns = useMemo(() => {
-    const buildFieldColumn = (field: FieldDef): Partial<Column<RowData>> => {
-      const column = buildDsgCol(field, visibleLines, t)
-      const Cell = column.component
+    return orderedFields.map((field, index): Partial<Column<RowData>> => {
+      const column = fieldColumns[index]
       return {
         ...column,
-        component: Cell
-          ? (props) => (
-              <div style={{ display: 'contents', color: props.rowData.__cellColors?.[field.id] }}>
-                <Cell {...props} />
-              </div>
-            )
-          : undefined,
         headerClassName: field.id === pinnedField?.id ? 'dsg-cell-pinned-left' : undefined,
         cellClassName: field.id === pinnedField?.id ? 'dsg-cell-pinned-left' : undefined,
         basis: columnPreview[field.id] ?? columnWidths[field.id],
@@ -79,9 +92,8 @@ export default function useGridColumns({
           </div>
         ),
       }
-    }
-    return orderedFields.map((field) => buildFieldColumn(field))
-  }, [orderedFields, pinnedField, columnPreview, columnWidths, renderFieldMenu, execute, visibleLines, startResize, t])
+    })
+  }, [orderedFields, fieldColumns, pinnedField, columnPreview, columnWidths, renderFieldMenu, execute, startResize, t])
 
   const addColumn = useMemo<Partial<Column<RowData>>>(
     () => ({

@@ -240,6 +240,7 @@ export default function buildDsgCol(
     case 'modified_time':
       return {
         ...common,
+        disabled: true,
         component: ({ rowData }) => (
           <span className={`${s.dateCell} ${s.dateCellValue}`}>{cellText(rowData[field.id], field)}</span>
         ),
