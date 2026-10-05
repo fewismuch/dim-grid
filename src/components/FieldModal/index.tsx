@@ -1,7 +1,7 @@
 import { CheckCircleTwoTone } from '@ant-design/icons'
 import { DndContext } from '@dnd-kit/core'
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { Button, ColorPicker, Input, Modal, Alert } from 'antd'
+import { Alert, Button, ColorPicker, Input, Modal } from 'antd'
 import { Fragment, useId, useState } from 'react'
 import {
   FIELD_TYPES,
@@ -232,7 +232,12 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
         )}
       </div>
       {field && field.type !== type && (
-        <Alert className={s.hint} title="修改类型将转换已有数据，无法转换的值会清空；保存后可撤销恢复。" type="warning" showIcon />
+        <Alert
+          className={s.hint}
+          title="修改类型将转换已有数据，无法转换的值会清空；保存后可撤销恢复。"
+          type="warning"
+          showIcon
+        />
       )}
       {error && (
         <p role="alert" className={s.error}>

@@ -6,6 +6,7 @@ import StatsMenu from './StatsMenu'
 
 type Props = {
   orderedFields: FieldDef[]
+  columnWidths: Record<string, number>
   pinnedFieldId?: string
   columnPreview: Record<string, number>
   processedRows: RowData[]
@@ -20,6 +21,7 @@ type Props = {
 
 export default function GridFooter({
   orderedFields,
+  columnWidths,
   pinnedFieldId,
   columnPreview,
   processedRows,
@@ -45,11 +47,7 @@ export default function GridFooter({
             width: footerWidth,
             minWidth:
               88 +
-              orderedFields.reduce(
-                (width, field) =>
-                  width + (columnPreview[field.id] ?? field.width ?? (field.type === 'checkbox' ? 80 : 180)),
-                0,
-              ),
+              orderedFields.reduce((width, field) => width + (columnPreview[field.id] ?? columnWidths[field.id]), 0),
           }}
         >
           <div className={s.footerGutter} aria-hidden="true" />
@@ -63,7 +61,7 @@ export default function GridFooter({
                   type="text"
                   className={`${s.footerCol} ${val === null ? s.footerColEmpty : ''} ${pinnedField?.id === field.id ? s.footerPinned : ''}`}
                   style={{
-                    flex: `0 0 ${columnPreview[field.id] ?? field.width ?? (field.type === 'checkbox' ? 80 : 180)}px`,
+                    flex: `0 0 ${columnPreview[field.id] ?? columnWidths[field.id]}px`,
                     minWidth: 60,
                     fontSize: 12,
                   }}

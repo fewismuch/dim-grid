@@ -27,6 +27,7 @@ import useGridColumns from './hooks/useGridColumns'
 import useGroupWindow from './hooks/useGroupWindow'
 import useRowReorder from './hooks/useRowReorder'
 import useTableDocument from './hooks/useTableDocument'
+import { columnWidth } from './model/columnWidth'
 import type { TableDocument } from './model/document'
 import { newField } from './model/document'
 import { ROW_HEIGHT } from './model/rowHeight'
@@ -205,6 +206,10 @@ export default function App({
     () => processRows(rows, fields, filters, sorts, search),
     [rows, fields, filters, sorts, search],
   )
+  const columnWidths = useMemo(
+    () => Object.fromEntries(fields.map((field) => [field.id, columnWidth(field, rows)])),
+    [fields, rows],
+  )
 
   const groups: { key: string; rows: RowData[] }[] | null = useMemo(() => {
     if (!groupBy.fieldId) return null
@@ -290,6 +295,7 @@ export default function App({
 
   const gridColumns = useGridColumns({
     orderedFields,
+    columnWidths,
     pinnedFieldId,
     columnPreview,
     visibleLines,
@@ -406,6 +412,7 @@ export default function App({
 
       <GridFooter
         orderedFields={orderedFields}
+        columnWidths={columnWidths}
         pinnedFieldId={pinnedFieldId}
         columnPreview={columnPreview}
         processedRows={processedRows}

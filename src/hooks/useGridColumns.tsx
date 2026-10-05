@@ -7,6 +7,7 @@ import type useTableDocument from './useTableDocument'
 
 type Options = {
   orderedFields: FieldDef[]
+  columnWidths: Record<string, number>
   pinnedFieldId: string
   columnPreview: Record<string, number>
   visibleLines: 1 | 2 | 5
@@ -18,6 +19,7 @@ type Options = {
 
 export default function useGridColumns({
   orderedFields,
+  columnWidths,
   pinnedFieldId,
   columnPreview,
   visibleLines,
@@ -42,7 +44,7 @@ export default function useGridColumns({
           : undefined,
         headerClassName: field.id === pinnedField?.id ? 'dsg-cell-pinned-left' : undefined,
         cellClassName: field.id === pinnedField?.id ? 'dsg-cell-pinned-left' : undefined,
-        basis: columnPreview[field.id] ?? field.width ?? (field.type === 'checkbox' ? 80 : 180),
+        basis: columnPreview[field.id] ?? columnWidths[field.id],
         grow: 0,
         shrink: 0,
         minWidth: 60,
@@ -77,7 +79,7 @@ export default function useGridColumns({
       }
     }
     return orderedFields.map((field) => buildFieldColumn(field))
-  }, [orderedFields, pinnedField, columnPreview, renderFieldMenu, execute, visibleLines, startResize])
+  }, [orderedFields, pinnedField, columnPreview, columnWidths, renderFieldMenu, execute, visibleLines, startResize])
 
   const addColumn = useMemo<Partial<Column<RowData>>>(
     () => ({
