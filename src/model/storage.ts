@@ -1,5 +1,6 @@
 import type { TableDocument } from './document.ts'
 import { emptyView } from './document.ts'
+import { normalizeStat } from './stats.ts'
 import type { FieldDef, FieldOption, FieldType, RowData } from './table.ts'
 import { cellText, defaultValue, parseLinkValue, parseMultiValue } from './table.ts'
 
@@ -54,6 +55,7 @@ export function serializeDocument(doc: TableDocument): string {
     ),
     view: {
       ...doc.view,
+      colStats: Object.fromEntries(Object.entries(doc.view.colStats).map(([id, value]) => [id, normalizeStat(value)])),
       hiddenFields: [...doc.view.hiddenFields],
       highlightDupes: [...doc.view.highlightDupes],
       groupBy: { fieldId: doc.view.groupBy.fieldId, collapsed: [...doc.view.groupBy.collapsed] },
@@ -192,7 +194,18 @@ export function deserializeDocument(raw: string): TableDocument {
       typeof item.fieldId === 'string' &&
       ids.has(item.fieldId) &&
       typeof item.op === 'string' &&
-      ['contains', 'not_contains', 'equals', 'not_equals', 'empty', 'not_empty'].includes(item.op) &&
+      [
+        'contains',
+        'not_contains',
+        'equals',
+        'not_equals',
+        'empty',
+        'not_empty',
+        'greater',
+        'greater_equal',
+        'less',
+        'less_equal',
+      ].includes(item.op) &&
       typeof item.value === 'string'
         ? [{ id: item.id, fieldId: item.fieldId, op: item.op, value: item.value }]
         : [],
@@ -209,7 +222,9 @@ export function deserializeDocument(raw: string): TableDocument {
     )
   if (record(saved.colStats))
     view.colStats = Object.fromEntries(
-      Object.entries(saved.colStats).filter(([id, value]) => ids.has(id) && typeof value === 'string'),
+      Object.entries(saved.colStats)
+        .filter(([id, value]) => ids.has(id) && typeof value === 'string')
+        .map(([id, value]) => [id, normalizeStat(value as string)]),
     ) as Record<string, string>
   return { fields, rows, view }
 }

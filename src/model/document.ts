@@ -1,3 +1,4 @@
+import { type GridLocale, translate } from '../i18n.ts'
 import type { RowHeight } from './rowHeight.ts'
 import type { FieldDef, FilterItem, GroupByState, RowData, SortItem } from './table.ts'
 import { convertValue, defaultValue, isTimestampField, newId, reconcileRows } from './table.ts'
@@ -18,8 +19,8 @@ export interface TableDocument {
   rows: RowData[]
   view: TableView
 }
-export const emptyView = (): TableView => ({
-  name: '表格视图',
+export const emptyView = (locale: GridLocale = 'zh-CN'): TableView => ({
+  name: translate(locale, '表格视图'),
   rowHeight: 'low',
   pinnedFieldId: '',
   filters: [],
@@ -29,34 +30,34 @@ export const emptyView = (): TableView => ({
   highlightDupes: new Set(),
   colStats: {},
 })
-export const initialDocument = (): TableDocument => ({
+export const initialDocument = (locale: GridLocale = 'zh-CN'): TableDocument => ({
   fields: [
-    { id: 'f1', label: '文本', type: 'text' },
+    { id: 'f1', label: translate(locale, '文本'), type: 'text' },
     {
       id: 'f2',
-      label: '单选',
+      label: translate(locale, '单选'),
       type: 'select',
       options: [
-        { id: 'o1', label: '待开始', color: '#e8f8f0', textColor: '#0a6640' },
-        { id: 'o2', label: '进行中', color: '#fef3d0', textColor: '#7a5800' },
-        { id: 'o3', label: '已完成', color: '#e8f0fe', textColor: '#1a3a8f' },
+        { id: 'o1', label: translate(locale, '待开始'), color: '#e8f8f0', textColor: '#0a6640' },
+        { id: 'o2', label: translate(locale, '进行中'), color: '#fef3d0', textColor: '#7a5800' },
+        { id: 'o3', label: translate(locale, '已完成'), color: '#e8f0fe', textColor: '#1a3a8f' },
       ],
     },
-    { id: 'f3', label: '日期', type: 'date' },
+    { id: 'f3', label: translate(locale, '日期'), type: 'date' },
   ],
   rows: [
-    { id: 'r1', f1: '任务 A', f2: '进行中', f3: new Date('2024-03-15T00:00:00') },
+    { id: 'r1', f1: translate(locale, '任务 A'), f2: translate(locale, '进行中'), f3: new Date('2024-03-15T00:00:00') },
     { id: 'r2', f1: '', f2: '', f3: null },
     { id: 'r3', f1: '', f2: '', f3: null },
   ],
-  view: emptyView(),
+  view: emptyView(locale),
 })
 
 export type TableCommand =
   | { type: 'document/replace'; document: TableDocument }
   | { type: 'field/save'; field: FieldDef; index?: number }
   | { type: 'field/delete'; id: string }
-  | { type: 'field/duplicate'; id: string; newId: string }
+  | { type: 'field/duplicate'; id: string; newId: string; suffix?: string }
   | { type: 'field/reorder'; fields: FieldDef[] }
   | { type: 'field/resize'; id: string; width: number }
   | { type: 'rows/change'; before: RowData[]; after: RowData[] }
@@ -145,7 +146,7 @@ export function applyCommand(doc: TableDocument, command: TableCommand): TableDo
       fields.splice(index + 1, 0, {
         ...source,
         id: command.newId,
-        label: `${source.label} 副本`,
+        label: `${source.label} ${command.suffix ?? '副本'}`,
         options: source.options?.map((option) => ({ ...option })),
       })
       return {
@@ -271,9 +272,12 @@ export function historyReducer(state: HistoryState, action: HistoryAction): Hist
   }
 }
 
-export function newField(doc: Pick<TableDocument, 'fields'>, anchor: string, offset: number): TableCommand | null {
+export function newField(
+  doc: Pick<TableDocument, 'fields'>,
+  anchor: string,
+  offset: number,
+  label = '文本',
+): TableCommand | null {
   const index = doc.fields.findIndex((field) => field.id === anchor)
-  return index < 0
-    ? null
-    : { type: 'field/save', field: { id: newId(), label: '文本', type: 'text' }, index: index + offset }
+  return index < 0 ? null : { type: 'field/save', field: { id: newId(), label, type: 'text' }, index: index + offset }
 }

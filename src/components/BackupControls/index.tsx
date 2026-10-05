@@ -1,6 +1,7 @@
 import { ExportOutlined, ImportOutlined, MoreOutlined } from '@ant-design/icons'
 import { Button, Dropdown } from 'antd'
 import { lazy, Suspense, useRef, useState } from 'react'
+import { useT } from '../../locale'
 import type { TableDocument } from '../../model/document'
 import { deserializeDocument, serializeDocument } from '../../model/storage'
 
@@ -15,6 +16,7 @@ export default function BackupControls({
   onImport: (document: TableDocument) => void
   recoveryRaw?: string | null
 }) {
+  const t = useT()
   const input = useRef<HTMLInputElement>(null)
   const [error, setError] = useState('')
   const [payload, setPayload] = useState<string | null>(null)
@@ -22,7 +24,7 @@ export default function BackupControls({
   return (
     <>
       {payload !== null && (
-        <Suspense fallback={<span role="status">正在生成备份…</span>}>
+        <Suspense fallback={<span role="status">{t('正在生成备份…')}</span>}>
           <BackupDialog value={payload} onClose={() => setPayload(null)} />
         </Suspense>
       )}
@@ -31,22 +33,22 @@ export default function BackupControls({
         placement="bottomRight"
         menu={{
           items: [
-            { key: 'export', label: '导出备份', icon: <ExportOutlined />, onClick: () => exportBackup() },
+            { key: 'export', label: t('导出备份'), icon: <ExportOutlined />, onClick: () => exportBackup() },
             ...(recoveryRaw
               ? [
                   {
                     key: 'recovery',
-                    label: '导出原始数据',
+                    label: t('导出原始数据'),
                     icon: <ExportOutlined />,
                     onClick: () => exportBackup(recoveryRaw),
                   },
                 ]
               : []),
-            { key: 'import', label: '导入备份', icon: <ImportOutlined />, onClick: () => input.current?.click() },
+            { key: 'import', label: t('导入备份'), icon: <ImportOutlined />, onClick: () => input.current?.click() },
           ],
         }}
       >
-        <Button type="text" icon={<MoreOutlined />} aria-label="更多操作" title="更多操作" />
+        <Button type="text" icon={<MoreOutlined />} aria-label={t('更多操作')} title={t('更多操作')} />
       </Dropdown>
       <input
         ref={input}
@@ -58,16 +60,16 @@ export default function BackupControls({
           event.target.value = ''
           if (!file) return
           try {
-            if (file.size > 20 * 1024 * 1024) throw new Error('备份文件不能超过 20 MB。')
+            if (file.size > 20 * 1024 * 1024) throw new Error(t('备份文件不能超过 20 MB。'))
             onImport(deserializeDocument(await file.text()))
             setError('')
           } catch (error) {
             setError(
               error instanceof SyntaxError
-                ? '备份不是有效的 JSON 文件，当前表格已保留。'
+                ? t('备份不是有效的 JSON 文件，当前表格已保留。')
                 : error instanceof Error
-                  ? error.message
-                  : '备份导入失败。',
+                  ? t(error.message)
+                  : t('备份导入失败。'),
             )
           }
         }}

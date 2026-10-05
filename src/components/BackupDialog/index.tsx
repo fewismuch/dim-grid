@@ -1,9 +1,11 @@
 import { Button, Input, type InputRef, Modal } from 'antd'
 import { useRef, useState } from 'react'
+import { useT } from '../../locale'
 import { cellText } from '../../model/table'
 import s from './styles.module.css'
 
 export default function BackupDialog({ value, onClose }: { value: string; onClose: () => void }) {
+  const t = useT()
   const textarea = useRef<InputRef>(null)
   const [status, setStatus] = useState('')
   let displayedValue = value
@@ -22,41 +24,41 @@ export default function BackupDialog({ value, onClose }: { value: string; onClos
     anchor.click()
     anchor.remove()
     window.setTimeout(() => URL.revokeObjectURL(url), 30000)
-    setStatus('若浏览器未下载文件，可以复制下方备份内容。')
+    setStatus(t('若浏览器未下载文件，可以复制下方备份内容。'))
   }
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(displayedValue)
-      setStatus('备份内容已复制。')
+      setStatus(t('备份内容已复制。'))
     } catch {
       textarea.current?.focus()
       textarea.current?.select()
-      setStatus('请按 Ctrl / ⌘ C 复制已选中的备份内容。')
+      setStatus(t('请按 Ctrl / ⌘ C 复制已选中的备份内容。'))
     }
   }
   return (
     <Modal
       open
-      title="导出备份"
+      title={t('导出备份')}
       onCancel={onClose}
       footer={[
         <Button key="close" onClick={onClose}>
-          关闭
+          {t('关闭')}
         </Button>,
         <Button key="copy" onClick={copy}>
-          复制内容
+          {t('复制内容')}
         </Button>,
         <Button key="download" type="primary" onClick={download}>
-          下载 JSON
+          {t('下载 JSON')}
         </Button>,
       ]}
       width={560}
     >
-      <p className={s.hint}>下载 JSON 文件，或复制备份内容另存为 .json 文件。备份包含字段、记录和视图设置。</p>
+      <p className={s.hint}>{t('下载 JSON 文件，或复制备份内容另存为 .json 文件。备份包含字段、记录和视图设置。')}</p>
       <Input.TextArea
         ref={textarea}
         rows={8}
-        aria-label="备份内容"
+        aria-label={t('备份内容')}
         readOnly
         value={displayedValue}
         className={s.payload}

@@ -4,6 +4,7 @@ import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } 
 import { Button, Popover, Tooltip } from 'antd'
 import { type ReactNode, useCallback, useState } from 'react'
 import { FIELD_TYPES, type FieldDef, Ic } from '../../constants'
+import { useT } from '../../locale'
 import s from './styles.module.css'
 
 interface DraggableFieldProps {
@@ -16,6 +17,7 @@ interface DraggableFieldProps {
 }
 
 function DraggableField({ field, hidden, onToggle, pinned, onPin, menu }: DraggableFieldProps) {
+  const t = useT()
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: field.id })
 
   const style = {
@@ -29,7 +31,7 @@ function DraggableField({ field, hidden, onToggle, pinned, onPin, menu }: Dragga
       <Button
         type="text"
         size="small"
-        aria-label={`移动 ${field.label}`}
+        aria-label={`${t('移动')} ${field.label}`}
         className={s.dragHandle}
         icon={<Ic.GripVertical />}
         {...listeners}
@@ -45,21 +47,21 @@ function DraggableField({ field, hidden, onToggle, pinned, onPin, menu }: Dragga
         type="text"
         size="small"
         icon={hidden ? <Ic.EyeOff /> : <Ic.Eye />}
-        aria-label={`${hidden ? '显示' : '隐藏'}${field.label}列`}
+        aria-label={`${hidden ? t('显示') : t('隐藏')} ${field.label} ${t('列')}`}
         onClick={(e) => {
           e.stopPropagation()
           onToggle()
         }}
-        title={hidden ? '显示' : '隐藏'}
+        title={hidden ? t('显示') : t('隐藏')}
       />
       <Button
         size="small"
         color={pinned ? 'primary' : 'default'}
         variant="text"
         icon={pinned ? <PushpinFilled /> : <PushpinOutlined />}
-        aria-label={`${pinned ? '取消固定' : '固定'}${field.label}列`}
+        aria-label={`${pinned ? t('取消固定') : t('固定')} ${field.label} ${t('列')}`}
         aria-pressed={pinned}
-        title={pinned ? '取消固定列' : '固定到左侧（每次一列）'}
+        title={pinned ? t('取消固定列') : t('固定到左侧（每次一列）')}
         onClick={onPin}
       />
       <span className={s.settingsButton}>{menu}</span>
@@ -86,6 +88,7 @@ export default function TableSettings({
   onTogglePin,
   renderMenu,
 }: Props) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -117,7 +120,7 @@ export default function TableSettings({
     >
       <SortableContext items={fields.map((f: FieldDef) => f.id)} strategy={verticalListSortingStrategy}>
         <div className={s.panelPopover}>
-          {fields.length === 0 && <div className={s.emptyHint}>暂无列</div>}
+          {fields.length === 0 && <div className={s.emptyHint}>{t('暂无列')}</div>}
           {fields.map((field: FieldDef) => (
             <DraggableField
               key={field.id}
@@ -147,7 +150,7 @@ export default function TableSettings({
 
   return (
     <Popover open={open} onOpenChange={setOpen} content={content} trigger="click" placement="bottomLeft">
-      <Tooltip title="表格设置">
+      <Tooltip title={t('表格设置')}>
         <Button color={open ? 'primary' : 'default'} variant="text" icon={<Ic.Settings />} />
       </Tooltip>
     </Popover>

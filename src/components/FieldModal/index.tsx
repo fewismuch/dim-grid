@@ -13,6 +13,7 @@ import {
   OPT_COLORS,
   OPT_TEXT_COLORS,
 } from '../../constants'
+import { useT } from '../../locale'
 import s from './styles.module.css'
 
 interface SortableOptionProps {
@@ -23,6 +24,7 @@ interface SortableOptionProps {
 }
 
 function SortableOption({ index, opt, onChange, onDelete }: SortableOptionProps) {
+  const t = useT()
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: opt.id ?? String(index),
   })
@@ -38,7 +40,7 @@ function SortableOption({ index, opt, onChange, onDelete }: SortableOptionProps)
       <ColorPicker
         size="small"
         value={opt.color}
-        presets={[{ label: '选项颜色', colors: OPT_COLORS }]}
+        presets={[{ label: t('选项颜色'), colors: OPT_COLORS }]}
         onChangeComplete={(color) => {
           const hex = color.toHexString()
           onChange('color', hex)
@@ -53,14 +55,14 @@ function SortableOption({ index, opt, onChange, onDelete }: SortableOptionProps)
       <Input
         className={s.optInput}
         value={opt.label}
-        placeholder={`选项 ${index + 1}`}
+        placeholder={`${t('选项')} ${index + 1}`}
         onChange={(e) => onChange('label', e.target.value)}
       />
-      <Button type="text" danger aria-label="删除选项" icon={<Ic.Trash />} onClick={onDelete} />
+      <Button type="text" danger aria-label={t('删除选项')} icon={<Ic.Trash />} onClick={onDelete} />
       <Button
         type="text"
         size="small"
-        aria-label="拖动选项"
+        aria-label={t('拖动选项')}
         className={s.optDragHandle}
         icon={<Ic.GripVertical />}
         {...listeners}
@@ -78,6 +80,7 @@ interface Props {
 }
 
 export default function FieldModal({ field, onSave, onDelete, onClose }: Props) {
+  const t = useT()
   const isEdit = !!field
   const [label, setLabel] = useState(field?.label || '')
   const [type, setType] = useState<FieldType>(field?.type || 'text')
@@ -86,9 +89,9 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
   const [options, setOptions] = useState<FieldOption[]>(() =>
     (
       field?.options || [
-        { label: '待开始', color: OPT_COLORS[0], textColor: OPT_TEXT_COLORS[0] },
-        { label: '进行中', color: OPT_COLORS[1], textColor: OPT_TEXT_COLORS[1] },
-        { label: '已完成', color: OPT_COLORS[2], textColor: OPT_TEXT_COLORS[2] },
+        { label: t('待开始'), color: OPT_COLORS[0], textColor: OPT_TEXT_COLORS[0] },
+        { label: t('进行中'), color: OPT_COLORS[1], textColor: OPT_TEXT_COLORS[1] },
+        { label: t('已完成'), color: OPT_COLORS[2], textColor: OPT_TEXT_COLORS[2] },
       ]
     ).map((option) => ({ ...option, id: option.id ?? newId() })),
   )
@@ -103,7 +106,7 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
 
   const handleSave = () => {
     if (!label.trim()) {
-      setError('请输入列名称')
+      setError(t('请输入列名称'))
       return
     }
     const cleanOpts = options.map((o) => ({ ...o, label: o.label.trim() })).filter((o) => o.label)
@@ -111,7 +114,7 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
       new Set(cleanOpts.map((option) => option.label)).size !== cleanOpts.length &&
       ['select', 'multi_select'].includes(type)
     ) {
-      setError('选项名称不能重复')
+      setError(t('选项名称不能重复'))
       return
     }
     onSave({
@@ -121,7 +124,7 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
         type === 'select' || type === 'multi_select'
           ? cleanOpts.length
             ? cleanOpts
-            : [{ id: newId(), label: '选项1', color: OPT_COLORS[0], textColor: OPT_TEXT_COLORS[0] }]
+            : [{ id: newId(), label: t('选项1'), color: OPT_COLORS[0], textColor: OPT_TEXT_COLORS[0] }]
           : undefined,
     })
   }
@@ -131,7 +134,7 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
   return (
     <Modal
       open
-      title={isEdit ? '编辑列' : '新建列'}
+      title={isEdit ? t('编辑列') : t('新建列')}
       onCancel={onClose}
       footer={
         <div className={s.footer}>
@@ -144,13 +147,13 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
                 onClose()
               }}
             >
-              删除列
+              {t('删除列')}
             </Button>
           )}
           <div className={s.footerActions}>
-            <Button onClick={onClose}>取消</Button>
+            <Button onClick={onClose}>{t('取消')}</Button>
             <Button type="primary" onClick={handleSave}>
-              确定
+              {t('确定')}
             </Button>
           </div>
         </div>
@@ -160,21 +163,21 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
     >
       <div className={s.body}>
         <label htmlFor={labelId} className={s.fieldLabel}>
-          数据表列名
+          {t('数据表列名')}
         </label>
         <Input
           id={labelId}
           value={label}
           onChange={(e) => setLabel(e.target.value)}
-          placeholder="输入列名称"
+          placeholder={t('输入列名称')}
           onKeyDown={(e) => e.key === 'Enter' && handleSave()}
         />
 
-        <div className={s.fieldLabel}>列类型</div>
+        <div className={s.fieldLabel}>{t('列类型')}</div>
         <div className={s.typeGrid}>
           {sections.map((sec) => (
             <Fragment key={sec}>
-              <div className={s.typeSectionLabel}>{sec}</div>
+              <div className={s.typeSectionLabel}>{t(sec)}</div>
               {FIELD_TYPES.filter((f) => f.section === sec).map((ft) => (
                 <Button
                   block
@@ -186,7 +189,7 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
                   onClick={() => setType(ft.key)}
                 >
                   <span className={s.typeButtonContent}>
-                    {ft.label}
+                    {t(ft.label)}
                     {type === ft.key && <CheckCircleTwoTone twoToneColor="#52c41a" />}
                   </span>
                 </Button>
@@ -198,7 +201,7 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
         {(type === 'select' || type === 'multi_select') && (
           <div className={s.optionsWrap}>
             <div className={s.optionsHeader}>
-              <div className={`${s.fieldLabel} ${s.fieldLabelNoMargin}`}>选项设置</div>
+              <div className={`${s.fieldLabel} ${s.fieldLabelNoMargin}`}>{t('选项设置')}</div>
             </div>
             <DndContext
               onDragEnd={(e) => {
@@ -226,7 +229,7 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
               </SortableContext>
             </DndContext>
             <Button className={s.addOptBtn} icon={<Ic.Plus />} onClick={addOpt}>
-              添加一个选项
+              {t('添加一个选项')}
             </Button>
           </div>
         )}
@@ -234,7 +237,7 @@ export default function FieldModal({ field, onSave, onDelete, onClose }: Props) 
       {field && field.type !== type && (
         <Alert
           className={s.hint}
-          title="修改类型将转换已有数据，无法转换的值会清空；保存后可撤销恢复。"
+          title={t('修改类型将转换已有数据，无法转换的值会清空；保存后可撤销恢复。')}
           type="warning"
           showIcon
         />

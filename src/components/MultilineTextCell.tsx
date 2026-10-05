@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { CellProps } from 'react-datasheet-grid'
+import { useT } from '../locale'
 import type { RowData } from '../model/table'
 import s from './buildDsgCol.module.css'
 
@@ -12,6 +13,7 @@ export default function MultilineTextCell({
   fieldId,
   visibleLines,
 }: CellProps<RowData, unknown> & { fieldId: string; visibleLines: 1 | 2 | 5 }) {
+  const t = useT()
   const value = String(rowData[fieldId] ?? '')
   const firstLine = value.split(/\r?\n/, 1)[0]
   const hasMoreLines = /\r?\n/.test(value)
@@ -59,7 +61,7 @@ export default function MultilineTextCell({
       ref={ref}
       data-multiline-editor={isMultiline || undefined}
       className={isMultiline ? s.multilineEditor : s.singleLineEditor}
-      aria-label="文本"
+      aria-label={t('文本')}
       rows={isMultiline ? 2 : 1}
       wrap={isMultiline ? 'soft' : 'off'}
       value={draft}

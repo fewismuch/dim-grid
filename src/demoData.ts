@@ -113,5 +113,5 @@ export const demoData: TableDocument = {
       modified: '2026-10-01T06:00:00.000Z',
     },
   ],
-  view: { ...emptyView(), name: '项目交付示例', rowHeight: 'medium' },
+  view: { ...emptyView(), name: '项目交付示例', rowHeight: 'low' },
 }

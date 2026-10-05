@@ -18,16 +18,25 @@ const memory = (raw = null) => {
 test('versioned storage round trip preserves dates, IDs, field order and complete view state', () => {
   const doc = initialDocument()
   doc.view.name = '项目进度'
-  doc.view.filters = [{ id: 'a', fieldId: 'f1', op: 'contains', value: '任务' }]
+  doc.view.filters = [
+    { id: 'a', fieldId: 'f1', op: 'contains', value: '任务' },
+    { id: 'c', fieldId: 'f3', op: 'greater_equal', value: '2024-03-01' },
+  ]
   doc.view.sorts = [{ id: 'b', fieldId: 'f3', dir: 'desc' }]
   doc.view.groupBy = { fieldId: 'f2', collapsed: new Set(['进行中']) }
   doc.view.hiddenFields.add('f3')
   doc.view.highlightDupes.add('f1')
-  doc.view.colStats.f2 = '已填写数'
+  doc.view.colStats.f2 = 'filled'
   doc.view.pinnedFieldId = 'f2'
   doc.view.rowHeight = 'high'
   doc.fields[0].width = 60
   assert.deepEqual(deserializeDocument(serializeDocument(doc)), doc)
+})
+
+test('legacy Chinese statistic names migrate to stable keys', () => {
+  const legacy = JSON.parse(serializeDocument(initialDocument()))
+  legacy.view.colStats = { f2: '已填写数' }
+  assert.equal(deserializeDocument(JSON.stringify(legacy)).view.colStats.f2, 'filled')
 })
 
 test('older backups default to low row height and saved choices round trip', () => {

@@ -1,15 +1,22 @@
 import type { RefObject, SetStateAction } from 'react'
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useGridLocale } from '../locale'
 import type { TableCommand, TableDocument, TableView } from '../model/document'
 import { emptyView, historyReducer, historyState, initialDocument } from '../model/document'
 import { loadDocument, STORAGE_KEY, saveDocument } from '../model/storage'
 
 type InitialData = Pick<TableDocument, 'fields' | 'rows'> & { view?: TableView }
+let activeShortcutRoot: HTMLDivElement | null = null
 
-function load(storageKey: string, initialData?: InitialData, enableLocalStorage = true) {
+function load(
+  storageKey: string,
+  initialData?: InitialData,
+  enableLocalStorage = true,
+  locale: 'zh-CN' | 'en-US' = 'zh-CN',
+) {
   const fallback = initialData
-    ? { fields: initialData.fields, rows: initialData.rows, view: initialData.view ?? emptyView() }
-    : initialDocument()
+    ? { fields: initialData.fields, rows: initialData.rows, view: initialData.view ?? emptyView(locale) }
+    : initialDocument(locale)
   if (!enableLocalStorage) return { document: fallback, error: null, writable: true, recoveryRaw: null }
   try {
     return loadDocument(window.localStorage, fallback, storageKey)
@@ -29,14 +36,19 @@ export default function useTableDocument(
   initialData?: InitialData,
   enableLocalStorage = true,
 ) {
-  const [loaded] = useState(() => load(storageKey, initialData, enableLocalStorage))
+  const locale = useGridLocale()
+  const [loaded] = useState(() => load(storageKey, initialData, enableLocalStorage, locale))
   const [history, dispatch] = useReducer(historyReducer, loaded.document, historyState)
   const [saveError, setSaveError] = useState(loaded.error)
   const writable = useRef(loaded.writable)
   const latest = useRef(history.present)
-  const execute = useCallback((command: TableCommand, group?: string) => {
-    dispatch({ type: 'commit', command, group, time: Date.now() })
-  }, [])
+  const execute = useCallback(
+    (command: TableCommand, group?: string) => {
+      if (rootRef?.current) activeShortcutRoot = rootRef.current
+      dispatch({ type: 'commit', command, group, time: Date.now() })
+    },
+    [rootRef],
+  )
   const replaceDocument = useCallback(
     (document: import('../model/document').TableDocument) => {
       writable.current = true
@@ -85,6 +97,12 @@ export default function useTableDocument(
   }, [history.present, storageKey, enableLocalStorage])
 
   useEffect(() => {
+    const root = rootRef?.current
+    const updateShortcutRoot = (event: Event) => {
+      if (!root) return
+      if (root.contains(event.target as Node)) activeShortcutRoot = root
+      else if (event.target !== document.body && activeShortcutRoot === root) activeShortcutRoot = null
+    }
     const onStorage = (event: StorageEvent) => {
       if (!enableLocalStorage) return
       if (event.key !== storageKey) return
@@ -92,7 +110,11 @@ export default function useTableDocument(
       setSaveError('另一页面修改了本地表格，已暂停此页保存。请导出本页备份并刷新。')
     }
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!rootRef?.current?.contains(event.target as Node)) return
+      if (!root) return
+      // DataSheetGrid blurs the focused element, so shortcuts can arrive on
+      // body even after the cell selection has been cleared.
+      if (!root.contains(event.target as Node) && !(event.target === document.body && activeShortcutRoot === root))
+        return
       if (!(event.metaKey || event.ctrlKey) || event.altKey || event.isComposing) return
       if ((event.target as HTMLElement)?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]'))
         return
@@ -104,11 +126,16 @@ export default function useTableDocument(
         redo()
       }
     }
+    document.addEventListener('pointerdown', updateShortcutRoot)
+    document.addEventListener('focusin', updateShortcutRoot)
     window.addEventListener('storage', onStorage)
     document.addEventListener('keydown', onKeyDown)
     return () => {
+      document.removeEventListener('pointerdown', updateShortcutRoot)
+      document.removeEventListener('focusin', updateShortcutRoot)
       window.removeEventListener('storage', onStorage)
       document.removeEventListener('keydown', onKeyDown)
+      if (activeShortcutRoot === root) activeShortcutRoot = null
     }
   }, [undo, redo, storageKey, rootRef, enableLocalStorage])
 

@@ -1,3 +1,5 @@
+import { normalizeStat } from './stats.ts'
+
 export interface FieldOption {
   id?: string
   label: string
@@ -31,6 +33,27 @@ export interface RowData {
   __cellColors?: Record<string, string>
   [key: string]: unknown
 }
+
+const textColorFieldTypes = new Set<FieldType>([
+  'text',
+  'number',
+  'float',
+  'date',
+  'email',
+  'created_time',
+  'modified_time',
+])
+
+export function textColorTarget(
+  rows: RowData[],
+  fields: FieldDef[],
+  cursorIndex: { row: number; col: number } | null,
+): { row: RowData; field: FieldDef } | null {
+  if (!cursorIndex) return null
+  const row = rows[cursorIndex.row]
+  const field = fields[cursorIndex.col]
+  return row && field && textColorFieldTypes.has(field.type) ? { row, field } : null
+}
 export interface SortItem {
   id: string
   fieldId: string
@@ -53,6 +76,8 @@ export interface ModalState {
 
 export const newId = (): string => crypto.randomUUID()
 export const isTimestampField = (type: FieldType): boolean => type === 'created_time' || type === 'modified_time'
+export const isComparableField = (type: FieldType): boolean =>
+  ['number', 'float', 'rating', 'progress', 'date', 'created_time', 'modified_time'].includes(type)
 
 export function timestampText(value: unknown): string {
   if (typeof value !== 'string' || !value) return ''
@@ -161,6 +186,7 @@ export function processRows(
   filters: FilterItem[],
   sorts: SortItem[],
   search: string,
+  locale = 'zh-CN',
 ): RowData[] {
   const fieldMap = new Map(fields.map((field) => [field.id, field]))
   const query = search.trim().toLocaleLowerCase()
@@ -178,6 +204,25 @@ export function processRows(
         continue
       }
       if (!value) continue
+      if (['greater', 'greater_equal', 'less', 'less_equal'].includes(op)) {
+        if (!isComparableField(field.type) || empty) return false
+        const dateField = field.type === 'date' || isTimestampField(field.type)
+        const actual =
+          field.type === 'date'
+            ? new Date(`${cellText(row[fieldId], field)}T00:00:00`).getTime()
+            : dateField
+              ? new Date(row[fieldId] as string | Date).getTime()
+              : Number(row[fieldId])
+        const expected = dateField
+          ? new Date(/^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value).getTime()
+          : Number(value)
+        if (!Number.isFinite(actual) || !Number.isFinite(expected) || !value.trim()) return false
+        if (op === 'greater' && actual <= expected) return false
+        if (op === 'greater_equal' && actual < expected) return false
+        if (op === 'less' && actual >= expected) return false
+        if (op === 'less_equal' && actual > expected) return false
+        continue
+      }
       const text = cellText(row[fieldId], field).toLocaleLowerCase()
       const target = value.toLocaleLowerCase()
       if (op === 'contains' && !text.includes(target)) return false
@@ -202,7 +247,7 @@ export function processRows(
         if (['number', 'float', 'rating', 'progress'].includes(field.type)) cmp = Number(va) - Number(vb)
         else if (field.type === 'date' || isTimestampField(field.type))
           cmp = new Date(va as string).getTime() - new Date(vb as string).getTime()
-        else cmp = cellText(va, field).localeCompare(cellText(vb, field), 'zh', { numeric: true })
+        else cmp = cellText(va, field).localeCompare(cellText(vb, field), locale, { numeric: true })
         if (cmp && Number.isFinite(cmp)) return dir === 'asc' ? cmp : -cmp
       }
       return 0
@@ -277,20 +322,20 @@ export function calcStat(stat: string, rows: RowData[], field: FieldDef): number
   const filled = rows.filter((row) => !isEmptyValue(row[field.id], field))
   const unique = new Set(filled.map((row) => cellText(row[field.id], field))).size
   const pct = (n: number) => `${rows.length ? Math.round((n / rows.length) * 100) : 0}%`
-  switch (stat) {
-    case '记录总数':
+  switch (normalizeStat(stat)) {
+    case 'count':
       return rows.length
-    case '已填写数':
+    case 'filled':
       return filled.length
-    case '未填写数':
+    case 'empty':
       return rows.length - filled.length
-    case '唯一数':
+    case 'unique':
       return unique
-    case '已填写占比':
+    case 'filledPercent':
       return pct(filled.length)
-    case '未填写占比':
+    case 'emptyPercent':
       return pct(rows.length - filled.length)
-    case '唯一数占比':
+    case 'uniquePercent':
       return pct(unique)
     default:
       return null

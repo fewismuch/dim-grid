@@ -1,4 +1,4 @@
-import { Alert, Button } from 'antd'
+import { Alert, Button, ConfigProvider, type ThemeConfig } from 'antd'
 import type React from 'react'
 import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react'
 import type { ContextMenuComponentProps } from 'react-datasheet-grid'
@@ -27,15 +27,20 @@ import useGridColumns from './hooks/useGridColumns'
 import useGroupWindow from './hooks/useGroupWindow'
 import useRowReorder from './hooks/useRowReorder'
 import useTableDocument from './hooks/useTableDocument'
+import { antLocales, type GridLocale, LocaleContext, useGridLocale, useT } from './locale'
 import { columnWidth } from './model/columnWidth'
 import type { TableDocument } from './model/document'
 import { newField } from './model/document'
 import { ROW_HEIGHT } from './model/rowHeight'
-import { cellText, createRow, duplicateValues, processRows } from './model/table'
+import { cellText, createRow, duplicateValues, processRows, textColorTarget } from './model/table'
 
 const FieldModal = lazy(() => import('./components/FieldModal'))
 
 export interface DimGridProps {
+  /** UI language; defaults to Simplified Chinese. */
+  locale?: GridLocale
+  /** Ant Design theme tokens for controls rendered by the grid. */
+  theme?: ThemeConfig
   /** Data used on first mount when this storage key has no saved document. */
   initialData?: Pick<TableDocument, 'fields' | 'rows'> & { view?: TableDocument['view'] }
   /** Read and save data in localStorage; defaults to true. */
@@ -48,14 +53,17 @@ export interface DimGridProps {
   style?: React.CSSProperties
 }
 
-export default function App({
+function Grid({
   initialData,
   enableLocalStorage = true,
   storageKey,
   height = '100%',
   className,
   style,
+  theme,
 }: DimGridProps) {
+  const t = useT()
+  const locale = useGridLocale()
   const rootRef = useRef<HTMLDivElement>(null)
   const {
     document: table,
@@ -130,15 +138,15 @@ export default function App({
 
   const handleFieldsReorder = useCallback((fields: FieldDef[]) => execute({ type: 'field/reorder', fields }), [execute])
   const duplicateField = useCallback(
-    (id: string) => execute({ type: 'field/duplicate', id, newId: newId() }),
-    [execute],
+    (id: string) => execute({ type: 'field/duplicate', id, newId: newId(), suffix: t('副本') }),
+    [execute, t],
   )
   const insertField = useCallback(
     (id: string, offset: number) => {
-      const command = newField({ fields }, id, offset)
+      const command = newField({ fields }, id, offset, t('文本'))
       if (command) execute(command)
     },
-    [fields, execute],
+    [fields, execute, t],
   )
 
   const toggleHighlight = useCallback(
@@ -203,8 +211,8 @@ export default function App({
   }
 
   const processedRows = useMemo(
-    () => processRows(rows, fields, filters, sorts, search),
-    [rows, fields, filters, sorts, search],
+    () => processRows(rows, fields, filters, sorts, search, locale),
+    [rows, fields, filters, sorts, search, locale],
   )
   const columnWidths = useMemo(
     () => Object.fromEntries(fields.map((field) => [field.id, columnWidth(field, rows)])),
@@ -306,15 +314,14 @@ export default function App({
   })
 
   const renderContextMenu = (viewRows: RowData[]) => (props: ContextMenuComponentProps) => {
-    const row = viewRows[props.cursorIndex.row]
-    const field = orderedFields[props.cursorIndex.col]
+    const target = textColorTarget(viewRows, orderedFields, props.cursorIndex)
     return (
       <ContextMenu
         {...props}
-        textColor={row?.__cellColors?.[field?.id] ?? null}
+        textColor={target?.row.__cellColors?.[target.field.id] ?? null}
         onTextColorChange={
-          row && field
-            ? (color) => execute({ type: 'cell/text-color', rowId: row.id, fieldId: field.id, color })
+          target
+            ? (color) => execute({ type: 'cell/text-color', rowId: target.row.id, fieldId: target.field.id, color })
             : undefined
         }
       />
@@ -330,7 +337,7 @@ export default function App({
             type="text"
             size="small"
             icon={<Ic.GripVertical />}
-            aria-label={`拖动记录 ${rowIndex + 1}`}
+            aria-label={`${t('拖动记录')} ${rowIndex + 1}`}
             className="dsg-gutter-grip"
             style={{ display: canReorderRows ? undefined : 'none' }}
             onKeyDown={(e) => {
@@ -345,7 +352,7 @@ export default function App({
         </div>
       ),
     }),
-    [handleGutterMouseDown, canReorderRows, moveRow],
+    [handleGutterMouseDown, canReorderRows, moveRow, t],
   )
 
   const makeRow = useCallback(() => createRow(fields), [fields])
@@ -366,7 +373,11 @@ export default function App({
   }
 
   return (
-    <div ref={rootRef} className={`${s.app} dim-grid${className ? ` ${className}` : ''}`} style={{ ...style, height }}>
+    <div
+      ref={rootRef}
+      className={`${s.app} dim-grid${className ? ` ${className}` : ''}`}
+      style={{ ...style, height, '--color-primary': theme?.token?.colorPrimary ?? '#00b96b' } as React.CSSProperties}
+    >
       <GridToolbar
         table={table}
         recoveryRaw={recoveryRaw}
@@ -386,7 +397,7 @@ export default function App({
         renderFieldMenu={renderFieldMenu}
       />
 
-      {saveError && <Alert type="error" showIcon title={saveError} role="alert" />}
+      {saveError && <Alert type="error" showIcon title={t(saveError)} role="alert" />}
       <GridBody
         gridAreaRef={gridAreaRef}
         syncHorizontalScroll={syncHorizontalScroll}
@@ -429,7 +440,7 @@ export default function App({
         <Suspense
           fallback={
             <div role="status" className={s.loading}>
-              正在加载…
+              {t('正在加载…')}
             </div>
           }
         >
@@ -442,5 +453,15 @@ export default function App({
         </Suspense>
       )}
     </div>
+  )
+}
+
+export default function App({ locale = 'zh-CN', theme, ...props }: DimGridProps) {
+  return (
+    <LocaleContext.Provider value={locale}>
+      <ConfigProvider locale={antLocales[locale]} theme={theme ?? { token: { colorPrimary: '#00b96b' } }}>
+        <Grid {...props} theme={theme} />
+      </ConfigProvider>
+    </LocaleContext.Provider>
   )
 }

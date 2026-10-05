@@ -14,6 +14,7 @@ import {
   processRows,
   reconcileRows,
   safeLink,
+  textColorTarget,
 } from '../src/model/table.ts'
 
 const text: FieldDef = { id: 'name', label: '名称', type: 'text' }
@@ -26,6 +27,18 @@ const rows: RowData[] = [
   { id: 'c', name: '', n: 2 },
 ]
 
+test('text color target ignores missing and non-text cells after row changes', () => {
+  const fields = [text, number, multi, link]
+  assert.deepEqual(textColorTarget(rows.slice(1), fields, { row: 0, col: 0 }), { row: rows[1], field: text })
+  assert.equal(textColorTarget(rows.slice(1), fields, null), null)
+  assert.equal(textColorTarget(rows.slice(1), fields, { row: -1, col: 0 }), null)
+  assert.equal(textColorTarget(rows.slice(1), fields, { row: 2, col: 0 }), null)
+  assert.equal(textColorTarget(rows.slice(1), fields, { row: 0, col: -1 }), null)
+  assert.equal(textColorTarget(rows.slice(1), fields, { row: 0, col: 4 }), null)
+  assert.equal(textColorTarget(rows.slice(1), fields, { row: 0, col: 2 }), null)
+  assert.equal(textColorTarget(rows.slice(1), fields, { row: 0, col: 3 }), null)
+})
+
 test('empty filters work without a comparison value; zero is filled', () => {
   assert.deepEqual(
     processRows(rows, [text, number], [{ id: 'f', fieldId: 'name', op: 'empty', value: '' }], [], '').map((r) => r.id),
@@ -36,6 +49,41 @@ test('empty filters work without a comparison value; zero is filled', () => {
     ['b'],
   )
   assert.equal(isEmptyValue(0, number), false)
+})
+
+test('comparison filters use numeric values and exclude invalid or empty cells', () => {
+  const source = [...rows, { id: 'd', n: null }, { id: 'e', n: 'invalid' }]
+  for (const [op, expected] of [
+    ['greater', ['a']],
+    ['greater_equal', ['a', 'c']],
+    ['less', ['b']],
+    ['less_equal', ['b', 'c']],
+  ] as const) {
+    assert.deepEqual(
+      processRows(source, [number], [{ id: 'f', fieldId: 'n', op, value: '2' }], [], '').map((r) => r.id),
+      expected,
+    )
+  }
+  assert.deepEqual(processRows(source, [number], [{ id: 'f', fieldId: 'n', op: 'greater', value: 'abc' }], [], ''), [])
+})
+
+test('comparison filters use dates rather than displayed strings', () => {
+  const date: FieldDef = { id: 'd', label: '日期', type: 'date' }
+  const created: FieldDef = { id: 't', label: '创建时间', type: 'created_time' }
+  const source = [
+    { id: 'a', d: new Date('2024-03-15T00:00:00'), t: '2024-03-15T12:00:00Z' },
+    { id: 'b', d: new Date('2024-04-01T00:00:00'), t: '2024-04-01T12:00:00Z' },
+  ]
+  assert.deepEqual(
+    processRows(source, [date], [{ id: 'f', fieldId: 'd', op: 'less', value: '2024-04-01' }], [], '').map((r) => r.id),
+    ['a'],
+  )
+  assert.deepEqual(
+    processRows(source, [created], [{ id: 'f', fieldId: 't', op: 'greater', value: '2024-03-20' }], [], '').map(
+      (r) => r.id,
+    ),
+    ['b'],
+  )
 })
 
 test('numeric sort uses values rather than lexicographic strings and leaves source intact', () => {

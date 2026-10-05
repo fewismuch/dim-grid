@@ -1,6 +1,7 @@
 import { Button, Popover, Select, Tooltip } from 'antd'
 import { useState } from 'react'
 import { type FieldDef, Ic, type SortItem } from '../../constants'
+import { useT } from '../../locale'
 import style from './styles.module.css'
 
 interface Props {
@@ -12,12 +13,13 @@ interface Props {
 }
 
 export default function SortPanel({ fields, sorts, onAdd, onUpdate, onDelete }: Props) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const activeCount = sorts.filter((s) => s.fieldId).length
 
   const content = (
     <div className={style.panel}>
-      {sorts.length === 0 && <div className={style.emptyHint}>暂无排序条件</div>}
+      {sorts.length === 0 && <div className={style.emptyHint}>{t('暂无排序条件')}</div>}
       {sorts.map((s) => (
         <div key={s.id} className={style.row}>
           <Select
@@ -31,23 +33,23 @@ export default function SortPanel({ fields, sorts, onAdd, onUpdate, onDelete }: 
             value={s.dir}
             onChange={(val) => onUpdate(s.id, 'dir', val)}
             options={[
-              { value: 'asc', label: '升序' },
-              { value: 'desc', label: '降序' },
+              { value: 'asc', label: t('升序') },
+              { value: 'desc', label: t('降序') },
             ]}
           />
-          <Button type="text" danger aria-label="删除条件" icon={<Ic.X />} onClick={() => onDelete(s.id)} />
+          <Button type="text" danger aria-label={t('删除条件')} icon={<Ic.X />} onClick={() => onDelete(s.id)} />
         </div>
       ))}
       <Button type="link" onClick={onAdd} disabled={!fields.length}>
         <Ic.Plus />
-        添加排序条件
+        {t('添加排序条件')}
       </Button>
     </div>
   )
 
   return (
     <Popover open={open} onOpenChange={setOpen} content={content} trigger="click" placement="bottomLeft">
-      <Tooltip title={activeCount > 0 ? `排序 (${activeCount})` : '排序'}>
+      <Tooltip title={activeCount > 0 ? `${t('排序')} (${activeCount})` : t('排序')}>
         <Button color={activeCount > 0 ? 'primary' : 'default'} variant="text" icon={<Ic.Sort />} />
       </Tooltip>
     </Popover>

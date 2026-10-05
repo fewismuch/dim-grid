@@ -4,9 +4,24 @@ English | [简体中文](README.md)
 
 An embeddable multidimensional grid for React applications. It supports editing fields and records, filtering and sorting, grouping, search, column statistics, undo and redo, and JSON import and export.
 
+## Preview
+
+The main table view with text, status, progress, rating, tags, and date fields, plus an "Add record" entry at the bottom.
+
+![Main table view](docs/demo.webp)
+
+Click a column header to open the column menu for editing, duplicating, inserting, pinning, grouping, filtering, sorting, and highlighting duplicates.
+
+![Column menu](docs/demo1.webp)
+
+The "Edit column" dialog offers all 13 field types.
+
+![Edit column dialog](docs/demo2.webp)
+
 ## Features
 
 - **13 field types:** text, number, decimal, single select, multiple select, link, date, checkbox, email, rating, progress, created time, and modified time.
+- **Column actions:** add, edit, duplicate, and insert columns, pin columns, and group, filter, sort, and highlight duplicates by column.
 - **Table views:** filtering, sorting, grouping, search, pinned and hidden columns, adjustable column width and row height, duplicate highlighting, and column statistics.
 - **Record actions:** add, edit, duplicate, drag to reorder, undo, and redo.
 - **Data persistence:** optional browser local storage and JSON backup import and export.
@@ -20,7 +35,7 @@ pnpm install
 pnpm dev
 ```
 
-Open the local URL shown in your terminal. The demo data in [`src/demoData.ts`](src/demoData.ts) contains all 13 field types and five editable records. The demo uses `dim-grid.demo` as its local storage key. If you edited the demo previously, refreshing the page loads the saved data first.
+Open the local URL shown in your terminal. The demo data in [`src/demoData.ts`](src/demoData.ts) contains all 13 field types and five editable records. The demo has browser storage disabled, so refreshing resets it to the initial demo data. Live demo: <https://fewismuch.github.io/dim-grid/>.
 
 ## Use in a React project
 
@@ -63,10 +78,25 @@ Set `enableLocalStorage={false}` to disable browser storage. The grid then start
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `initialData` | `{ fields, rows, view? }` | Built-in sample data | Initial grid content; `view` is optional. |
+| `locale` | `'zh-CN' \| 'en-US'` | `'zh-CN'` | Language for the grid UI, Ant Design controls, and date editor. |
+| `theme` | Ant Design `ThemeConfig` | — | Theme passed to the grid's internal `ConfigProvider`. |
 | `enableLocalStorage` | `boolean` | `true` | Whether to read from and write to browser local storage. |
 | `storageKey` | `string` | `dim-grid.document` | Local storage key; use a different key for each grid on the same origin. |
 | `height` | CSS height value | `100%` | Grid height; with `100%`, the parent must have a definite height. |
 | `className`, `style` | React container props | — | Attributes for the outer container. |
+
+The grid configures its own Ant Design controls and date editor. The host app does not need to add a `ConfigProvider` or call the global `dayjs.locale()` for this component:
+
+```tsx
+<DimGrid
+  locale="en-US"
+  theme={{ token: { colorPrimary: '#00b96b' } }}
+  initialData={initialData}
+  height={600}
+/>
+```
+
+The `locale` prop translates the grid UI. Field names, options, and row values supplied by the host app remain as provided.
 
 ### Field values
 
@@ -82,10 +112,8 @@ pnpm build      # Standalone demo site
 pnpm build:lib  # ESM, CommonJS, CSS, and TypeScript declarations
 ```
 
-## GitHub Pages deployment
+Built with Vite, React, Ant Design, and react-datasheet-grid.
 
-Pushes to `main` run the [Pages workflow](.github/workflows/pages.yml), which checks the code, builds the demo, and deploys it automatically. You can also start it manually from the GitHub **Actions** tab. The deployed site is at <https://fewismuch.github.io/dim-grid/>.
+## License
 
-For the first deployment, select **GitHub Actions** under **Settings → Pages → Build and deployment → Source** in the repository. Make sure GitHub Actions is enabled for the repository. The workflow uses the built-in `GITHUB_TOKEN`; no extra secret is needed. Pull requests run checks and a build without deploying.
-
-Built with Vite, React, Ant Design, and react-datasheet-grid. Licensed under [MIT](LICENSE).
+[MIT](LICENSE)

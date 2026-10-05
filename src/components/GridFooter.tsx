@@ -2,6 +2,8 @@ import { Button } from 'antd'
 import React, { type Dispatch, type RefObject, type SetStateAction } from 'react'
 import s from '../App.module.css'
 import { calcStat, type FieldDef, type RowData } from '../constants'
+import { useT } from '../locale'
+import { normalizeStat, statLabels } from '../model/stats'
 import StatsMenu from './StatsMenu'
 
 type Props = {
@@ -33,6 +35,7 @@ export default function GridFooter({
   footerWidth,
   syncHorizontalScroll,
 }: Props) {
+  const t = useT()
   const pinnedField = orderedFields.find((field) => field.id === pinnedFieldId)
   return (
     <div className={s.footer}>
@@ -53,7 +56,7 @@ export default function GridFooter({
           <div className={s.footerGutter} aria-hidden="true" />
           {orderedFields.map((field) => {
             const isFirst = field.id === orderedFields[0]?.id
-            const stat = colStats[field.id] || (isFirst ? '记录总数' : '不展示')
+            const stat = normalizeStat(colStats[field.id] || (isFirst ? 'count' : 'none'))
             const val = calcStat(stat, processedRows, field)
             return (
               <React.Fragment key={field.id}>
@@ -65,17 +68,17 @@ export default function GridFooter({
                     minWidth: 60,
                     fontSize: 12,
                   }}
-                  aria-label={`${field.label}统计`}
+                  aria-label={`${field.label} ${t('统计')}`}
                   onClick={() => setStatsMenu(statsMenu === field.id ? null : field.id)}
                 >
                   <span className={s.footerContent}>
                     {val !== null ? (
                       <>
-                        <span className={s.footerColLabel}>{stat}</span>
+                        <span className={s.footerColLabel}>{t(statLabels[stat])}</span>
                         <span className={s.footerColVal}>{val}</span>
                       </>
                     ) : (
-                      <span className={s.footerAddStat}>+ 统计</span>
+                      <span className={s.footerAddStat}>+ {t('统计')}</span>
                     )}
                   </span>
                   {statsMenu === field.id && (

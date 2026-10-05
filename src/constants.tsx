@@ -151,14 +151,3 @@ export const OPT_TEXT_COLORS = [
   '#fff',
   '#fff',
 ]
-
-export const STAT_OPTS = [
-  '不展示',
-  '记录总数',
-  '已填写数',
-  '未填写数',
-  '唯一数',
-  '已填写占比',
-  '未填写占比',
-  '唯一数占比',
-]

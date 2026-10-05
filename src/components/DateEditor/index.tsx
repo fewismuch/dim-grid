@@ -1,8 +1,10 @@
 import { DatePicker } from 'antd'
 import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn'
 import type { ComponentRef } from 'react'
 import { useLayoutEffect, useRef } from 'react'
 import type { CellProps } from 'react-datasheet-grid'
+import { antLocales, useGridLocale } from '../../locale'
 import type { RowData } from '../../model/table'
 import s from '../buildDsgCol.module.css'
 
@@ -13,9 +15,10 @@ export default function DateEditor({
   stopEditing,
   fieldId,
 }: CellProps<RowData, unknown> & { fieldId: string }) {
+  const locale = useGridLocale()
   const ref = useRef<ComponentRef<typeof DatePicker>>(null)
   const raw = rowData[fieldId] as Date | null
-  const value = raw && dayjs(raw).isValid() ? dayjs(raw) : null
+  const value = raw && dayjs(raw).isValid() ? dayjs(raw).locale(locale === 'zh-CN' ? 'zh-cn' : 'en') : null
   useLayoutEffect(() => {
     if (focus) ref.current?.focus()
     else ref.current?.blur()
@@ -26,6 +29,7 @@ export default function DateEditor({
         ref={ref}
         open={focus}
         value={value}
+        locale={antLocales[locale].DatePicker}
         // Input blur can precede selection in the calendar portal. Only the
         // picker closing (outside click / Escape / selection) ends editing.
         onOpenChange={(open) => {

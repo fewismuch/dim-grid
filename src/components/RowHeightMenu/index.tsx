@@ -1,6 +1,7 @@
 import { ColumnHeightOutlined } from '@ant-design/icons'
 import { Button, Popover, Radio, Tooltip } from 'antd'
 import { useState } from 'react'
+import { useT } from '../../locale'
 import type { RowHeight } from '../../model/rowHeight'
 import s from './styles.module.css'
 
@@ -16,6 +17,7 @@ const options: { value: RowHeight; label: string }[] = [
 ]
 
 export default function RowHeightMenu({ value, onChange }: Props) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   return (
     <Popover
@@ -34,19 +36,19 @@ export default function RowHeightMenu({ value, onChange }: Props) {
           >
             {options.map((option) => (
               <Radio key={option.value} value={option.value} className={s.option}>
-                {option.label}
+                {t(option.label)}
               </Radio>
             ))}
           </Radio.Group>
         </div>
       }
     >
-      <Tooltip title="行高">
+      <Tooltip title={t('行高')}>
         <Button
           color={open ? 'primary' : 'default'}
           variant="text"
           icon={<ColumnHeightOutlined />}
-          aria-label={`行高，当前${options.find((option) => option.value === value)?.label}`}
+          aria-label={`${t('行高')}: ${t(options.find((option) => option.value === value)?.label ?? '')}`}
         />
       </Tooltip>
     </Popover>

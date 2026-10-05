@@ -4,6 +4,7 @@ import React, { lazy, Suspense, useLayoutEffect, useRef } from 'react'
 import type { CellProps, Column } from 'react-datasheet-grid'
 import { checkboxColumn, createTextColumn, floatColumn, intColumn, keyColumn, textColumn } from 'react-datasheet-grid'
 import { type FieldDef, type FieldOption, Ic, type RowData } from '../constants'
+import { useT } from '../locale'
 import { cellText, isEmptyValue, normalizeEmail, parseLinkValue, parseMultiValue, safeLink } from '../model/table'
 import s from './buildDsgCol.module.css'
 import LinkPopup from './LinkPopup'
@@ -173,6 +174,7 @@ function ProgressCell({
   stopEditing,
   columnData,
 }: CellProps<RowData, { fieldId: string }>) {
+  const t = useT()
   const inputRef = useRef<React.ComponentRef<typeof InputNumber>>(null)
   const { fieldId } = columnData
   const val = Math.min(100, Math.max(0, Number(rowData[fieldId]) || 0))
@@ -189,7 +191,7 @@ function ProgressCell({
         controls={false}
         min={0}
         max={100}
-        aria-label="进度百分比"
+        aria-label={t('进度百分比')}
         value={val}
         onChange={(value) => {
           setRowData({
@@ -222,7 +224,11 @@ function ProgressCell({
   )
 }
 
-export default function buildDsgCol(field: FieldDef, visibleLines: 1 | 2 | 5 = 1): Partial<Column<RowData>> {
+export default function buildDsgCol(
+  field: FieldDef,
+  visibleLines: 1 | 2 | 5 = 1,
+  t = (text: string) => text,
+): Partial<Column<RowData>> {
   const common = {
     id: field.id,
     title: field.label,
@@ -370,7 +376,7 @@ export default function buildDsgCol(field: FieldDef, visibleLines: 1 | 2 | 5 = 1
                   icon={<Ic.ExtLink />}
                   className="link-cell-btn"
                   onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                  title="编辑链接"
+                  title={t('编辑链接')}
                 />
               </LinkPopup>
               {linkUrl && (
@@ -383,7 +389,7 @@ export default function buildDsgCol(field: FieldDef, visibleLines: 1 | 2 | 5 = 1
                   rel="noopener noreferrer"
                   className="link-cell-open"
                   onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                  title="打开链接"
+                  title={t('打开链接')}
                 />
               )}
             </div>

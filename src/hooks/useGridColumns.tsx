@@ -3,6 +3,7 @@ import React, { type ReactNode, useMemo } from 'react'
 import type { Column } from 'react-datasheet-grid'
 import buildDsgCol from '../components/buildDsgCol'
 import { FIELD_TYPES, type FieldDef, Ic, type RowData } from '../constants'
+import { useT } from '../locale'
 import type useTableDocument from './useTableDocument'
 
 type Options = {
@@ -28,10 +29,11 @@ export default function useGridColumns({
   execute,
   openAdd,
 }: Options) {
+  const t = useT()
   const pinnedField = orderedFields.find((field) => field.id === pinnedFieldId)
   const dsgColumns = useMemo(() => {
     const buildFieldColumn = (field: FieldDef): Partial<Column<RowData>> => {
-      const column = buildDsgCol(field, visibleLines)
+      const column = buildDsgCol(field, visibleLines, t)
       const Cell = column.component
       return {
         ...column,
@@ -58,8 +60,8 @@ export default function useGridColumns({
             <button
               type="button"
               className="col-resize-handle"
-              aria-label={`调整${field.label}列宽`}
-              title="拖动调整列宽，方向键微调"
+              aria-label={`${t('调整列宽')}: ${field.label}`}
+              title={t('拖动调整列宽，方向键微调')}
               onPointerDown={(event) => startResize(field.id, event)}
               onMouseDown={(event) => event.stopPropagation()}
               onKeyDown={(event) => {
@@ -79,7 +81,7 @@ export default function useGridColumns({
       }
     }
     return orderedFields.map((field) => buildFieldColumn(field))
-  }, [orderedFields, pinnedField, columnPreview, columnWidths, renderFieldMenu, execute, visibleLines, startResize])
+  }, [orderedFields, pinnedField, columnPreview, columnWidths, renderFieldMenu, execute, visibleLines, startResize, t])
 
   const addColumn = useMemo<Partial<Column<RowData>>>(
     () => ({
@@ -89,7 +91,7 @@ export default function useGridColumns({
           type="text"
           block
           icon={<Ic.Plus />}
-          aria-label="添加列"
+          aria-label={t('添加列')}
           onMouseDown={(event) => event.stopPropagation()}
           onClick={openAdd}
         />
@@ -98,7 +100,7 @@ export default function useGridColumns({
         <Button
           type="text"
           block
-          aria-label="添加列"
+          aria-label={t('添加列')}
           onMouseDown={(event) => event.stopPropagation()}
           onClick={openAdd}
         />
@@ -112,7 +114,7 @@ export default function useGridColumns({
       shrink: 0,
       minWidth: 48,
     }),
-    [openAdd],
+    [openAdd, t],
   )
   const gridColumns = useMemo(() => [...dsgColumns, addColumn], [dsgColumns, addColumn])
 

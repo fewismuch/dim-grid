@@ -9,6 +9,7 @@ import {
 import s from '../App.module.css'
 import { type FieldDef, type GroupByState, Ic, type RowData } from '../constants'
 import type useGroupWindow from '../hooks/useGroupWindow'
+import { useT } from '../locale'
 import { groupGridHeight } from '../model/groupWindow'
 import { duplicateRow } from '../model/table'
 
@@ -57,6 +58,7 @@ export default function GridBody({
   gutterColumn,
   addRow,
 }: Props) {
+  const t = useT()
   const getGroupBadge = (groupKey: string, fieldId: string) => {
     const field = fields.find((f) => f.id === fieldId)
     if (field?.type === 'select' && groupKey) {
@@ -68,7 +70,7 @@ export default function GridBody({
           </span>
         )
     }
-    return <span className="group-badge group-badge-default">{groupKey || '（空）'}</span>
+    return <span className="group-badge group-badge-default">{groupKey || t('（空）')}</span>
   }
 
   return (
@@ -104,7 +106,9 @@ export default function GridBody({
                 onClick={() => toggleGroup(key)}
               >
                 {getGroupBadge(key, groupBy.fieldId)}
-                <span className={s.groupRowCount}>{gRows.length} 条记录</span>
+                <span className={s.groupRowCount}>
+                  {gRows.length} {t('条记录')}
+                </span>
               </Button>
               {!groupBy.collapsed.has(key) && (
                 <DataSheetGrid
@@ -146,11 +150,11 @@ export default function GridBody({
       )}
       {processedRows.length === 0 && (
         <div className={s.emptyHint}>
-          {rows.length ? '没有匹配的记录，请调整筛选条件或搜索内容' : '暂无记录，点击下方添加记录'}
+          {rows.length ? t('没有匹配的记录，请调整筛选条件或搜索内容') : t('暂无记录，点击下方添加记录')}
         </div>
       )}
       <Button type="text" block onClick={addRow} icon={<Ic.Plus />}>
-        添加记录
+        {t('添加记录')}
       </Button>
     </div>
   )

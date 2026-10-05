@@ -1,8 +1,10 @@
 import { Button, Input, type InputRef, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import { Ic } from '../constants'
+import { useT } from '../locale'
 
 export default function ViewTitle({ name, onRename }: { name: string; onRename: (name: string) => void }) {
+  const t = useT()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(name)
   const input = useRef<InputRef>(null)
@@ -19,7 +21,7 @@ export default function ViewTitle({ name, onRename }: { name: string; onRename: 
   return editing ? (
     <Input
       ref={input}
-      aria-label="视图名称"
+      aria-label={t('视图名称')}
       value={draft}
       maxLength={60}
       style={{ width: 200 }}
@@ -37,7 +39,7 @@ export default function ViewTitle({ name, onRename }: { name: string; onRename: 
     <Button
       type="text"
       icon={<Ic.Table style={{ color: 'var(--color-primary)' }} />}
-      title="点击修改视图名称"
+      title={t('点击修改视图名称')}
       onClick={() => {
         finished.current = false
         setDraft(name)

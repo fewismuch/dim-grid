@@ -1,6 +1,8 @@
 import type { MenuProps } from 'antd'
 import { Dropdown } from 'antd'
-import { Ic, STAT_OPTS } from '../../constants'
+import { Ic } from '../../constants'
+import { useT } from '../../locale'
+import { statKeys, statLabels } from '../../model/stats'
 
 interface Props {
   current: string
@@ -9,9 +11,10 @@ interface Props {
 }
 
 export default function StatsMenu({ current, onSelect, onClose }: Props) {
-  const items: MenuProps['items'] = STAT_OPTS.map((opt) => ({
+  const t = useT()
+  const items: MenuProps['items'] = statKeys.map((opt) => ({
     key: opt,
-    label: opt,
+    label: t(statLabels[opt]),
     icon: current === opt ? <Ic.Check /> : undefined,
     onClick: () => onSelect(opt),
   }))

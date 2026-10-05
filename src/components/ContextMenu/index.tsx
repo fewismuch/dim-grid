@@ -12,6 +12,7 @@ import { Dropdown } from 'antd'
 import * as React from 'react'
 import { useCallback } from 'react'
 import type { ContextMenuComponentProps, ContextMenuItem } from 'react-datasheet-grid'
+import { type GridLocale, translate, useGridLocale, useT } from '../../locale'
 import s from './styles.module.css'
 
 const colors = [
@@ -49,23 +50,24 @@ const useDocumentEventListener = <K extends keyof DocumentEventMap>(
   }, [listener, type])
 }
 
-export const defaultRenderItem = (item: ContextMenuItem) => {
-  if (item.type === 'CUT') return <>剪切</>
-  if (item.type === 'COPY') return <>复制</>
-  if (item.type === 'PASTE') return <>粘贴</>
-  if (item.type === 'DELETE_ROW') return <>删除行</>
+export const defaultRenderItem = (item: ContextMenuItem, locale: GridLocale = 'zh-CN') => {
+  const t = (text: string) => translate(locale, text)
+  if (item.type === 'CUT') return <>{t('剪切')}</>
+  if (item.type === 'COPY') return <>{t('复制')}</>
+  if (item.type === 'PASTE') return <>{t('粘贴')}</>
+  if (item.type === 'DELETE_ROW') return <>{t('删除行')}</>
   if (item.type === 'DELETE_ROWS')
     return (
       <>
-        删除多行 <b>{item.fromRow}</b> 到 <b>{item.toRow}</b>
+        {t('删除多行')} <b>{item.fromRow}</b> {t('到')} <b>{item.toRow}</b>
       </>
     )
-  if (item.type === 'INSERT_ROW_BELLOW') return <>插入行下方</>
-  if (item.type === 'DUPLICATE_ROW') return <>复制行</>
+  if (item.type === 'INSERT_ROW_BELLOW') return <>{t('插入行下方')}</>
+  if (item.type === 'DUPLICATE_ROW') return <>{t('复制行')}</>
   if (item.type === 'DUPLICATE_ROWS')
     return (
       <>
-        复制多行 <b>{item.fromRow}</b> 到 <b>{item.toRow}</b>
+        {t('复制多行')} <b>{item.fromRow}</b> {t('到')} <b>{item.toRow}</b>
       </>
     )
   return item.type
@@ -77,8 +79,10 @@ type Props = ContextMenuComponentProps & {
 }
 
 export const createContextMenuComponent =
-  (renderItem: (item: ContextMenuItem) => JSX.Element = defaultRenderItem) =>
+  (renderItem: (item: ContextMenuItem, locale: GridLocale) => JSX.Element = defaultRenderItem) =>
   ({ clientX, clientY, items, close, textColor, onTextColorChange }: Props) => {
+    const locale = useGridLocale()
+    const t = useT()
     useDocumentEventListener(
       'keydown',
       useCallback(
@@ -98,8 +102,8 @@ export const createContextMenuComponent =
         <button
           type="button"
           className={`${s.swatch} ${s.reset} ${textColor === null ? s.selected : ''}`}
-          aria-label="默认文本颜色"
-          title="默认文本颜色"
+          aria-label={t('默认文本颜色')}
+          title={t('默认文本颜色')}
           onClick={(event) => {
             event.stopPropagation()
             selectColor(null)
@@ -111,7 +115,7 @@ export const createContextMenuComponent =
             type="button"
             className={`${s.swatch} ${textColor?.toLowerCase() === color ? s.selected : ''}`}
             style={{ backgroundColor: color }}
-            aria-label={`文本颜色 ${color}`}
+            aria-label={`${t('文本颜色')} ${color}`}
             title={color}
             onClick={(event) => {
               event.stopPropagation()
@@ -129,7 +133,7 @@ export const createContextMenuComponent =
             {
               key: 'text-color',
               icon: <FontColorsOutlined />,
-              label: '文本颜色',
+              label: t('文本颜色'),
               children: [{ key: 'text-color-palette', label: palette, className: s.paletteItem }],
             },
           ]
@@ -137,7 +141,7 @@ export const createContextMenuComponent =
       ...items.map((item) => ({
         key: item.type,
         icon: icons[item.type],
-        label: renderItem(item),
+        label: renderItem(item, locale),
         danger: item.type.startsWith('DELETE'),
         onClick: () => {
           item.action()
