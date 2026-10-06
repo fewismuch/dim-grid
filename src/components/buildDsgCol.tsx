@@ -84,6 +84,17 @@ SelectCell.displayName = 'SelectCell'
 
 type MultiSelectColData = { options: FieldOption[]; fieldId: string }
 
+function MultiOptionTag({ option }: { option: FieldOption }) {
+  return (
+    <span
+      className={s.selectTagSmall}
+      style={{ '--tag-bg': option.color, '--tag-color': option.textColor } as React.CSSProperties}
+    >
+      {option.label}
+    </span>
+  )
+}
+
 const MultiSelectCell = React.memo(
   ({ active, rowData, setRowData, focus, stopEditing, columnData }: CellProps<RowData, MultiSelectColData>) => {
     const ref = useRef<React.ComponentRef<typeof Select>>(null)
@@ -118,28 +129,11 @@ const MultiSelectCell = React.memo(
           className={s.cellFull}
           options={options.map((o) => ({
             value: o.label,
-            label: (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <span className={s.optionDot} style={{ '--dot-bg': o.color } as React.CSSProperties} />
-                {o.label}
-              </span>
-            ),
+            label: <MultiOptionTag option={o} />,
           }))}
           tagRender={(props) => {
             const o = options.find((x) => x.label === props.value)
-            return (
-              <span
-                className={s.selectTagSmall}
-                style={
-                  {
-                    '--tag-bg': o?.color || 'var(--color-border)',
-                    '--tag-color': o?.textColor || 'var(--color-text-secondary)',
-                  } as React.CSSProperties
-                }
-              >
-                {o?.label ?? props.value}
-              </span>
-            )
+            return o ? <MultiOptionTag option={o} /> : <span>{props.value}</span>
           }}
         />
       </div>

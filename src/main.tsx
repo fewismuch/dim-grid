@@ -15,6 +15,7 @@ ReactDOM.createRoot(root).render(
       storageKey="dim-grid.demo"
       initialData={demoData}
       enableLocalStorage={false}
+      persistTheme
     />
   </StrictMode>,
 )

@@ -10,6 +10,8 @@
 
 ![主表格视图](docs/demo.webp)
 
+![主表格视图](docs/demo4.webp)
+
 点击列头可打开列菜单，进行编辑列、复制列、插入列、固定、分组、筛选、排序和高亮重复值等操作。
 
 ![列菜单](docs/demo1.webp)
@@ -71,7 +73,7 @@ export function RecordsPage() {
 
 `initialData` 只在首次挂载时用于初始化。每个字段和记录都需要唯一的 `id`；记录中的值使用字段 ID 作键。默认情况下，组件会先读取 `storageKey` 对应的本地数据，因此已有保存内容会覆盖 `initialData`。修改 `initialData` 属性也不会重置正在编辑的表格。
 
-如果不需要浏览器本地存储，设置 `enableLocalStorage={false}`。此时组件从 `initialData` 开始，不读取或写入 `localStorage`，编辑内容只保留在当前组件实例中；JSON 导入导出仍然可用。
+如果不需要浏览器本地存储，设置 `enableLocalStorage={false}`。此时组件从 `initialData` 开始，不读取或写入 `localStorage`，编辑内容只保留在当前组件实例中；JSON 导入导出仍然可用。主题偏好默认也不会保存，如需单独保存可设置 `persistTheme`。
 
 ### 组件属性
 
@@ -79,8 +81,9 @@ export function RecordsPage() {
 | --- | --- | --- | --- |
 | `initialData` | `{ fields, rows, view? }` | 内置示例数据 | 首次挂载时的表格内容；`view` 可选。 |
 | `locale` | `'zh-CN' \| 'en-US'` | `'zh-CN'` | 组件界面、Ant Design 控件和日期编辑器的语言。 |
-| `theme` | Ant Design `ThemeConfig` | — | 传给组件内部 `ConfigProvider` 的主题配置。 |
+| `theme` | Ant Design `ThemeConfig` | — | 传给组件内部 `ConfigProvider` 的主题配置；表格颜色也会跟随 Ant Design token。 |
 | `enableLocalStorage` | `boolean` | `true` | 是否读取和保存到浏览器本地存储。 |
+| `persistTheme` | `boolean` | 与 `enableLocalStorage` 相同 | 是否在浏览器本地保存工具栏的明暗主题选择。 |
 | `storageKey` | `string` | `dim-grid.document` | 本地存储键；同一域名下的多个表格应使用不同的键。 |
 | `height` | CSS 高度值 | `100%` | 表格高度；使用 `100%` 时，父容器需有确定高度。 |
 | `className`、`style` | React 容器属性 | — | 设置外层容器样式。 |
@@ -95,6 +98,8 @@ export function RecordsPage() {
   height={600}
 />
 ```
+
+工具栏右侧的月亮/太阳按钮可切换明暗主题。启用 `persistTheme` 时，选择会保存在 `${storageKey}.colorMode` 下，刷新后仍然生效。也可以通过 `theme={{ algorithm: antdTheme.darkAlgorithm }}` 设置初始暗色主题（从 `antd` 导入 `theme as antdTheme`）。
 
 `locale` 只翻译组件界面；传入的字段名、选项和记录内容属于业务数据，不会被自动翻译。
 

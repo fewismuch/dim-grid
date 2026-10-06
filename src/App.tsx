@@ -1,4 +1,4 @@
-import { Alert, Button, ConfigProvider, type ThemeConfig } from 'antd'
+import { Alert, theme as antdTheme, Button, ConfigProvider, type ThemeConfig } from 'antd'
 import type React from 'react'
 import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react'
 import type { ContextMenuComponentProps } from 'react-datasheet-grid'
@@ -32,6 +32,7 @@ import { columnWidth } from './model/columnWidth'
 import type { TableDocument } from './model/document'
 import { newField } from './model/document'
 import { ROW_HEIGHT } from './model/rowHeight'
+import { STORAGE_KEY } from './model/storage'
 import { cellText, createRow, duplicateValues, processRows, textColorTarget } from './model/table'
 
 const FieldModal = lazy(() => import('./components/FieldModal'))
@@ -45,12 +46,26 @@ export interface DimGridProps {
   initialData?: Pick<TableDocument, 'fields' | 'rows'> & { view?: TableDocument['view'] }
   /** Read and save data in localStorage; defaults to true. */
   enableLocalStorage?: boolean
+  /** Remember the toolbar's light/dark choice; defaults to enableLocalStorage. */
+  persistTheme?: boolean
   /** A unique key is recommended when several grids share the same origin. */
   storageKey?: string
   /** Height of the grid container; defaults to 100%. */
   height?: React.CSSProperties['height']
   className?: string
   style?: React.CSSProperties
+}
+
+type ColorMode = 'light' | 'dark'
+type GridProps = DimGridProps & { colorMode: ColorMode; onToggleColorMode: () => void }
+
+function savedColorMode(key: string): ColorMode | null {
+  try {
+    const value = window.localStorage.getItem(key)
+    return value === 'light' || value === 'dark' ? value : null
+  } catch {
+    return null
+  }
 }
 
 function Grid({
@@ -60,9 +75,11 @@ function Grid({
   height = '100%',
   className,
   style,
-  theme,
-}: DimGridProps) {
+  colorMode,
+  onToggleColorMode,
+}: GridProps) {
   const t = useT()
+  const { token } = antdTheme.useToken()
   const locale = useGridLocale()
   const rootRef = useRef<HTMLDivElement>(null)
   const {
@@ -376,9 +393,30 @@ function Grid({
     <div
       ref={rootRef}
       className={`${s.app} dim-grid${className ? ` ${className}` : ''}`}
-      style={{ ...style, height, '--color-primary': theme?.token?.colorPrimary ?? '#00b96b' } as React.CSSProperties}
+      style={
+        {
+          ...style,
+          height,
+          colorScheme: colorMode,
+          '--color-primary': token.colorPrimary,
+          '--color-text': token.colorText,
+          '--color-text-secondary': token.colorTextSecondary,
+          '--color-text-muted': token.colorTextTertiary,
+          '--color-text-placeholder': token.colorTextQuaternary,
+          '--color-icon': token.colorTextSecondary,
+          '--color-border': token.colorBorder,
+          '--color-border-secondary': token.colorBorderSecondary,
+          '--color-bg': token.colorBgContainer,
+          '--color-bg-hover': token.colorFillQuaternary,
+          '--color-bg-input-hover': token.colorFillTertiary,
+          '--color-danger': token.colorError,
+          '--color-danger-bg': token.colorErrorBg,
+        } as React.CSSProperties
+      }
     >
       <GridToolbar
+        colorMode={colorMode}
+        onToggleColorMode={onToggleColorMode}
         table={table}
         recoveryRaw={recoveryRaw}
         setView={setView}
@@ -456,11 +494,49 @@ function Grid({
   )
 }
 
-export default function App({ locale = 'zh-CN', theme, ...props }: DimGridProps) {
+export default function App({
+  locale = 'zh-CN',
+  theme,
+  storageKey,
+  enableLocalStorage = true,
+  persistTheme = enableLocalStorage,
+  ...props
+}: DimGridProps) {
+  const themeStorageKey = `${storageKey ?? STORAGE_KEY}.colorMode`
+  const [modeOverride, setModeOverride] = useState<ColorMode | null>(() =>
+    persistTheme ? savedColorMode(themeStorageKey) : null,
+  )
+  const algorithms = theme?.algorithm ? (Array.isArray(theme.algorithm) ? theme.algorithm : [theme.algorithm]) : []
+  const colorMode: ColorMode = modeOverride ?? (algorithms.includes(antdTheme.darkAlgorithm) ? 'dark' : 'light')
+  const effectiveTheme: ThemeConfig = {
+    ...theme,
+    token: { colorPrimary: '#00b96b', ...theme?.token },
+    algorithm: modeOverride
+      ? modeOverride === 'dark'
+        ? antdTheme.darkAlgorithm
+        : antdTheme.defaultAlgorithm
+      : theme?.algorithm,
+  }
   return (
     <LocaleContext.Provider value={locale}>
-      <ConfigProvider locale={antLocales[locale]} theme={theme ?? { token: { colorPrimary: '#00b96b' } }}>
-        <Grid {...props} theme={theme} />
+      <ConfigProvider locale={antLocales[locale]} theme={effectiveTheme}>
+        <Grid
+          {...props}
+          storageKey={storageKey}
+          enableLocalStorage={enableLocalStorage}
+          colorMode={colorMode}
+          onToggleColorMode={() => {
+            const nextMode = colorMode === 'dark' ? 'light' : 'dark'
+            setModeOverride(nextMode)
+            if (persistTheme) {
+              try {
+                window.localStorage.setItem(themeStorageKey, nextMode)
+              } catch {
+                // Keep the selected theme for this session when storage is unavailable.
+              }
+            }
+          }}
+        />
       </ConfigProvider>
     </LocaleContext.Provider>
   )

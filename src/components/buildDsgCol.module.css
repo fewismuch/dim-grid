@@ -124,15 +124,6 @@
   font-size: 12px;
 }
 
-/* Option dot */
-.optionDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  background: var(--dot-bg);
-  display: inline-block;
-}
-
 /* Date cell */
 .dateCell {
   padding: 0 8px;

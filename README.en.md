@@ -9,6 +9,7 @@ An embeddable multidimensional grid for React applications. It supports editing 
 The main table view with text, status, progress, rating, tags, and date fields, plus an "Add record" entry at the bottom.
 
 ![Main table view](docs/demo.webp)
+![Main table view](docs/demo4.webp)
 
 Click a column header to open the column menu for editing, duplicating, inserting, pinning, grouping, filtering, sorting, and highlighting duplicates.
 
@@ -71,7 +72,7 @@ export function RecordsPage() {
 
 `initialData` initializes the grid only on its first mount. Every field and row needs a unique `id`; row values are keyed by field ID. By default, data already saved under `storageKey` takes precedence over `initialData`. Changing the `initialData` prop does not reset the current grid.
 
-Set `enableLocalStorage={false}` to disable browser storage. The grid then starts from `initialData` and does not read or write `localStorage`. Edits last only for the current component instance; JSON import and export remain available.
+Set `enableLocalStorage={false}` to disable browser storage. The grid then starts from `initialData` and does not read or write `localStorage`. Edits last only for the current component instance; JSON import and export remain available. Theme preferences are also not saved by default in this case; set `persistTheme` to save them separately.
 
 ### Component props
 
@@ -79,8 +80,9 @@ Set `enableLocalStorage={false}` to disable browser storage. The grid then start
 | --- | --- | --- | --- |
 | `initialData` | `{ fields, rows, view? }` | Built-in sample data | Initial grid content; `view` is optional. |
 | `locale` | `'zh-CN' \| 'en-US'` | `'zh-CN'` | Language for the grid UI, Ant Design controls, and date editor. |
-| `theme` | Ant Design `ThemeConfig` | — | Theme passed to the grid's internal `ConfigProvider`. |
+| `theme` | Ant Design `ThemeConfig` | — | Theme passed to the grid's internal `ConfigProvider`; grid colors also follow Ant Design tokens. |
 | `enableLocalStorage` | `boolean` | `true` | Whether to read from and write to browser local storage. |
+| `persistTheme` | `boolean` | Same as `enableLocalStorage` | Whether to remember the toolbar's light/dark choice in browser storage. |
 | `storageKey` | `string` | `dim-grid.document` | Local storage key; use a different key for each grid on the same origin. |
 | `height` | CSS height value | `100%` | Grid height; with `100%`, the parent must have a definite height. |
 | `className`, `style` | React container props | — | Attributes for the outer container. |
@@ -95,6 +97,8 @@ The grid configures its own Ant Design controls and date editor. The host app do
   height={600}
 />
 ```
+
+Use the moon/sun button at the right of the toolbar to switch themes. With `persistTheme` enabled, the choice is saved under `${storageKey}.colorMode` and survives a refresh. To start in dark mode, pass `theme={{ algorithm: antdTheme.darkAlgorithm }}` (import `theme as antdTheme` from `antd`).
 
 The `locale` prop translates the grid UI. Field names, options, and row values supplied by the host app remain as provided.
 
