@@ -46,5 +46,17 @@
   },
   "files": {
     "includes": ["**", "!**/node_modules", "!**/dist", "!**/pnpm-lock.yaml"]
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["src/index.css"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noImportantStyles": "off"
+          }
+        }
+      }
+    }
+  ]
 }

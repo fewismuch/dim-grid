@@ -147,10 +147,7 @@ patch('DataSheetGrid.js', [
 ])
 
 patch('SelectionRect.js', [
-  [
-    'memo(({ columnWidths,',
-    'memo(({ hasPinnedLeftColumn, pinnedLeftCount = 0, pinnedLeftWidth = 0, columnWidths,',
-  ],
+  ['memo(({ columnWidths,', 'memo(({ hasPinnedLeftColumn, pinnedLeftCount = 0, pinnedLeftWidth = 0, columnWidths,'],
   [
     '    const minSelection =',
     `    const stickPinned = hasPinnedLeftColumn && (selection ? selection.min.col : activeCell?.col) < pinnedLeftCount;
@@ -159,11 +156,11 @@ patch('SelectionRect.js', [
   ],
   [
     '{ className: "dsg-selection-col-marker-container", style: {',
-    '{ className: (0, classnames_1.default)(\'dsg-selection-col-marker-container\', stickPinned && \'dsg-selection-pinned\', stickSpan && \'dsg-selection-pinned-span\'), style: {',
+    "{ className: (0, classnames_1.default)('dsg-selection-col-marker-container', stickPinned && 'dsg-selection-pinned', stickSpan && 'dsg-selection-pinned-span'), style: {",
   ],
   [
     "className: (0, classnames_1.default)('dsg-selection-rect', selectionIsDisabled && 'dsg-selection-rect-disabled'), style: Object.assign(Object.assign({}, selectionRect), { clipPath:",
-    "className: (0, classnames_1.default)('dsg-selection-rect', selectionIsDisabled && 'dsg-selection-rect-disabled', stickPinned && 'dsg-selection-pinned', stickSpan && 'dsg-selection-pinned-span'), style: Object.assign(Object.assign({}, selectionRect), { '--sel-width': `${selectionRect.width}px`, '--pin-width': `${pinnedLeftWidth}px`, clipPath:",
+    `className: (0, classnames_1.default)('dsg-selection-rect', selectionIsDisabled && 'dsg-selection-rect-disabled', stickPinned && 'dsg-selection-pinned', stickSpan && 'dsg-selection-pinned-span'), style: Object.assign(Object.assign({}, selectionRect), { '--sel-width': \`\${selectionRect.width}px\`, '--pin-width': \`\${pinnedLeftWidth}px\`, clipPath:`,
   ],
   [
     "'dsg-active-cell-focus': editing,",

@@ -316,7 +316,7 @@
   translate: var(--dsg-h-scroll, 0px) 0;
   transition: none;
 }
-.dsg-selection-pinned-span {
+.dsg-selection-rect.dsg-selection-pinned-span {
   width: max(var(--pin-width, 0px), calc(var(--sel-width) - var(--dsg-h-scroll, 0px))) !important;
 }
 .dsg-active-cell.dsg-active-cell-pinned-left {
