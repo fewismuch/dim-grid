@@ -27,7 +27,7 @@ test('versioned storage round trip preserves dates, IDs, field order and complet
   doc.view.hiddenFields.add('f3')
   doc.view.highlightDupes.add('f1')
   doc.view.colStats.f2 = 'filled'
-  doc.view.pinnedFieldId = 'f2'
+  doc.view.pinnedFieldIds = ['f1', 'f3']
   doc.view.rowHeight = 'high'
   doc.fields[0].width = 60
   assert.deepEqual(deserializeDocument(serializeDocument(doc)), doc)
@@ -37,6 +37,15 @@ test('legacy Chinese statistic names migrate to stable keys', () => {
   const legacy = JSON.parse(serializeDocument(initialDocument()))
   legacy.view.colStats = { f2: '已填写数' }
   assert.equal(deserializeDocument(JSON.stringify(legacy)).view.colStats.f2, 'filled')
+})
+
+test('older backups with one pinned column keep that column first', () => {
+  const legacy = JSON.parse(serializeDocument(initialDocument()))
+  delete legacy.view.pinnedFieldIds
+  legacy.view.pinnedFieldId = 'f2'
+  assert.deepEqual(deserializeDocument(JSON.stringify(legacy)).view.pinnedFieldIds, ['f2'])
+  legacy.view.pinnedFieldIds = ['missing', 'f3', 'f3', 'f1']
+  assert.deepEqual(deserializeDocument(JSON.stringify(legacy)).view.pinnedFieldIds, ['f3', 'f1'])
 })
 
 test('older backups default to low row height and saved choices round trip', () => {

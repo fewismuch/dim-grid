@@ -93,10 +93,9 @@
 }
 .footerCol.footerPinned {
   position: sticky;
-  left: 40px;
   z-index: 2;
   background: var(--color-bg);
-  box-shadow: -1px 0 var(--color-border-secondary);
+  box-shadow: 1px 0 var(--color-border-secondary);
 }
 .footerColEmpty {
   border-right: 0;

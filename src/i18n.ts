@@ -60,7 +60,6 @@ const english: Record<string, string> = {
   取消固定: 'Unpin',
   固定: 'Pin',
   取消固定列: 'Unpin column',
-  '固定到左侧（每次一列）': 'Pin to left (one column at a time)',
   暂无列: 'No columns',
   表格设置: 'Table settings',
   包含: 'Contains',

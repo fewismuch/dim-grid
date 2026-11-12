@@ -9,7 +9,7 @@ import type useTableDocument from './useTableDocument'
 type Options = {
   orderedFields: FieldDef[]
   columnWidths: Record<string, number>
-  pinnedFieldId: string
+  pinnedFieldIds: string[]
   columnPreview: Record<string, number>
   visibleLines: 1 | 2 | 5
   renderFieldMenu: (field: FieldDef) => ReactNode
@@ -21,7 +21,7 @@ type Options = {
 export default function useGridColumns({
   orderedFields,
   columnWidths,
-  pinnedFieldId,
+  pinnedFieldIds,
   columnPreview,
   visibleLines,
   renderFieldMenu,
@@ -30,7 +30,7 @@ export default function useGridColumns({
   openAdd,
 }: Options) {
   const t = useT()
-  const pinnedField = orderedFields.find((field) => field.id === pinnedFieldId)
+  const pinnedFields = useMemo(() => new Set(pinnedFieldIds), [pinnedFieldIds])
   // Keep cell component identities stable when row edits only change auto widths
   // or the header menu. Recreating a component here remounts every visible cell.
   const fieldColumns = useMemo(
@@ -57,8 +57,8 @@ export default function useGridColumns({
       const column = fieldColumns[index]
       return {
         ...column,
-        headerClassName: field.id === pinnedField?.id ? 'dsg-cell-pinned-left' : undefined,
-        cellClassName: field.id === pinnedField?.id ? 'dsg-cell-pinned-left' : undefined,
+        headerClassName: pinnedFields.has(field.id) ? 'dsg-cell-pinned-left' : undefined,
+        cellClassName: pinnedFields.has(field.id) ? 'dsg-cell-pinned-left' : undefined,
         basis: columnPreview[field.id] ?? columnWidths[field.id],
         grow: 0,
         shrink: 0,
@@ -93,7 +93,7 @@ export default function useGridColumns({
         ),
       }
     })
-  }, [orderedFields, fieldColumns, pinnedField, columnPreview, columnWidths, renderFieldMenu, execute, startResize, t])
+  }, [orderedFields, fieldColumns, pinnedFields, columnPreview, columnWidths, renderFieldMenu, execute, startResize, t])
 
   const addColumn = useMemo<Partial<Column<RowData>>>(
     () => ({

@@ -180,8 +180,16 @@ export function deserializeDocument(raw: string): TableDocument {
   if (typeof saved.name === 'string' && saved.name.trim()) view.name = saved.name.trim().slice(0, 60)
   if (saved.rowHeight === 'low' || saved.rowHeight === 'medium' || saved.rowHeight === 'high')
     view.rowHeight = saved.rowHeight
-  view.pinnedFieldId =
-    typeof saved.pinnedFieldId === 'string' && ids.has(saved.pinnedFieldId) ? saved.pinnedFieldId : ''
+  const pinnedFieldIds = [
+    ...new Set(
+      strings(saved.pinnedFieldIds).length
+        ? strings(saved.pinnedFieldIds)
+        : typeof saved.pinnedFieldId === 'string'
+          ? [saved.pinnedFieldId]
+          : [],
+    ),
+  ].filter((id) => ids.has(id))
+  view.pinnedFieldIds = pinnedFieldIds
   view.hiddenFields = new Set(strings(saved.hiddenFields).filter((id) => ids.has(id)))
   view.highlightDupes = new Set(strings(saved.highlightDupes).filter((id) => ids.has(id)))
   if (record(saved.groupBy) && typeof saved.groupBy.fieldId === 'string' && ids.has(saved.groupBy.fieldId)) {

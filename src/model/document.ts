@@ -6,7 +6,7 @@ import { convertValue, defaultValue, isTimestampField, newId, reconcileRows } fr
 export interface TableView {
   name: string
   rowHeight: RowHeight
-  pinnedFieldId: string
+  pinnedFieldIds: string[]
   filters: FilterItem[]
   sorts: SortItem[]
   groupBy: GroupByState
@@ -22,7 +22,7 @@ export interface TableDocument {
 export const emptyView = (locale: GridLocale = 'zh-CN'): TableView => ({
   name: translate(locale, '表格视图'),
   rowHeight: 'low',
-  pinnedFieldId: '',
+  pinnedFieldIds: [],
   filters: [],
   sorts: [],
   groupBy: { fieldId: '', collapsed: new Set() },
@@ -131,7 +131,7 @@ export function applyCommand(doc: TableDocument, command: TableCommand): TableDo
           filters: doc.view.filters.filter((item) => item.fieldId !== id),
           sorts: doc.view.sorts.filter((item) => item.fieldId !== id),
           groupBy: doc.view.groupBy.fieldId === id ? { fieldId: '', collapsed: new Set() } : doc.view.groupBy,
-          pinnedFieldId: doc.view.pinnedFieldId === id ? '' : doc.view.pinnedFieldId,
+          pinnedFieldIds: doc.view.pinnedFieldIds.filter((item) => item !== id),
           hiddenFields: remove(doc.view.hiddenFields),
           highlightDupes: remove(doc.view.highlightDupes),
           colStats,

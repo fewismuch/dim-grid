@@ -9,7 +9,7 @@ import StatsMenu from './StatsMenu'
 type Props = {
   orderedFields: FieldDef[]
   columnWidths: Record<string, number>
-  pinnedFieldId?: string
+  pinnedFieldIds: string[]
   columnPreview: Record<string, number>
   processedRows: RowData[]
   colStats: Record<string, string>
@@ -24,7 +24,7 @@ type Props = {
 export default function GridFooter({
   orderedFields,
   columnWidths,
-  pinnedFieldId,
+  pinnedFieldIds,
   columnPreview,
   processedRows,
   colStats,
@@ -36,7 +36,8 @@ export default function GridFooter({
   syncHorizontalScroll,
 }: Props) {
   const t = useT()
-  const pinnedField = orderedFields.find((field) => field.id === pinnedFieldId)
+  const pinnedFields = new Set(pinnedFieldIds)
+  let stickyLeft = 40
   return (
     <div className={s.footer}>
       <div
@@ -58,15 +59,20 @@ export default function GridFooter({
             const isFirst = field.id === orderedFields[0]?.id
             const stat = normalizeStat(colStats[field.id] || (isFirst ? 'count' : 'none'))
             const val = calcStat(stat, processedRows, field)
+            const width = columnPreview[field.id] ?? columnWidths[field.id]
+            const pinned = pinnedFields.has(field.id)
+            const left = stickyLeft
+            if (pinned) stickyLeft += width
             return (
               <React.Fragment key={field.id}>
                 <Button
                   type="text"
-                  className={`${s.footerCol} ${val === null ? s.footerColEmpty : ''} ${pinnedField?.id === field.id ? s.footerPinned : ''}`}
+                  className={`${s.footerCol} ${val === null ? s.footerColEmpty : ''} ${pinned ? s.footerPinned : ''}`}
                   style={{
-                    flex: `0 0 ${columnPreview[field.id] ?? columnWidths[field.id]}px`,
+                    flex: `0 0 ${width}px`,
                     minWidth: 60,
                     fontSize: 12,
+                    ...(pinned ? { left } : {}),
                   }}
                   aria-label={`${field.label} ${t('统计')}`}
                   onClick={() => setStatsMenu(statsMenu === field.id ? null : field.id)}

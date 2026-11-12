@@ -61,7 +61,7 @@ function DraggableField({ field, hidden, onToggle, pinned, onPin, menu }: Dragga
         icon={pinned ? <PushpinFilled /> : <PushpinOutlined />}
         aria-label={`${pinned ? t('取消固定') : t('固定')} ${field.label} ${t('列')}`}
         aria-pressed={pinned}
-        title={pinned ? t('取消固定列') : t('固定到左侧（每次一列）')}
+        title={pinned ? t('取消固定列') : t('固定到左侧')}
         onClick={onPin}
       />
       <span className={s.settingsButton}>{menu}</span>
@@ -74,7 +74,7 @@ interface Props {
   hiddenFields: Set<string>
   onReorder: (newFields: FieldDef[]) => void
   onToggleHide: (fieldId: string) => void
-  pinnedFieldId: string
+  pinnedFieldIds: string[]
   onTogglePin: (fieldId: string) => void
   renderMenu: (field: FieldDef) => ReactNode
 }
@@ -84,7 +84,7 @@ export default function TableSettings({
   hiddenFields,
   onReorder,
   onToggleHide,
-  pinnedFieldId,
+  pinnedFieldIds,
   onTogglePin,
   renderMenu,
 }: Props) {
@@ -127,7 +127,7 @@ export default function TableSettings({
               field={field}
               hidden={hiddenFields.has(field.id)}
               onToggle={() => onToggleHide(field.id)}
-              pinned={pinnedFieldId === field.id}
+              pinned={pinnedFieldIds.includes(field.id)}
               onPin={() => onTogglePin(field.id)}
               menu={renderMenu(field)}
             />

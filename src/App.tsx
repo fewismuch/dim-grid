@@ -91,7 +91,7 @@ function Grid({
     replaceDocument,
   } = useTableDocument(storageKey, rootRef, initialData, enableLocalStorage)
   const { fields, rows } = table
-  const { filters, groupBy, sorts, colStats, hiddenFields, highlightDupes, pinnedFieldId, rowHeight } = table.view
+  const { filters, groupBy, sorts, colStats, hiddenFields, highlightDupes, pinnedFieldIds, rowHeight } = table.view
   const rowPixels = ROW_HEIGHT[rowHeight].pixels
   const visibleLines = ROW_HEIGHT[rowHeight].lines
   const [modal, setModal] = useState<ModalState | null>(null)
@@ -258,17 +258,19 @@ function Grid({
     })
 
   const visibleFields = useMemo(() => fields.filter((f) => !hiddenFields.has(f.id)), [fields, hiddenFields])
-  const pinnedField = visibleFields.find((field) => field.id === pinnedFieldId)
-  const scrollFields = useMemo(
-    () => visibleFields.filter((field) => field.id !== pinnedFieldId),
-    [visibleFields, pinnedFieldId],
+  const pinnedFields = useMemo(
+    () => visibleFields.filter((field) => pinnedFieldIds.includes(field.id)),
+    [visibleFields, pinnedFieldIds],
   )
-  const orderedFields = useMemo(
-    () => (pinnedField ? [pinnedField, ...scrollFields] : scrollFields),
-    [pinnedField, scrollFields],
-  )
+  const orderedFields = useMemo(() => {
+    const pinned = new Set(pinnedFields.map((field) => field.id))
+    return [...pinnedFields, ...visibleFields.filter((field) => !pinned.has(field.id))]
+  }, [pinnedFields, visibleFields])
   const togglePin = useCallback(
-    (id: string) => setView('pinnedFieldId', (current) => (current === id ? '' : id)),
+    (id: string) =>
+      setView('pinnedFieldIds', (current) =>
+        current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+      ),
     [setView],
   )
   const renderFieldMenu = useCallback(
@@ -286,7 +288,7 @@ function Grid({
         onToggleHighlight={() => toggleHighlight(field.id)}
         onDelete={() => deleteField(field.id)}
         onPin={() => togglePin(field.id)}
-        pinned={pinnedFieldId === field.id}
+        pinned={pinnedFieldIds.includes(field.id)}
         highlighted={highlightDupes.has(field.id)}
       />
     ),
@@ -300,7 +302,7 @@ function Grid({
       toggleHighlight,
       deleteField,
       togglePin,
-      pinnedFieldId,
+      pinnedFieldIds,
       resizingColumnId,
       highlightDupes,
     ],
@@ -321,7 +323,7 @@ function Grid({
   const gridColumns = useGridColumns({
     orderedFields,
     columnWidths,
-    pinnedFieldId,
+    pinnedFieldIds,
     columnPreview,
     visibleLines,
     renderFieldMenu,
@@ -462,7 +464,7 @@ function Grid({
       <GridFooter
         orderedFields={orderedFields}
         columnWidths={columnWidths}
-        pinnedFieldId={pinnedFieldId}
+        pinnedFieldIds={pinnedFieldIds}
         columnPreview={columnPreview}
         processedRows={processedRows}
         colStats={colStats}

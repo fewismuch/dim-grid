@@ -13,11 +13,11 @@ test('deleting a field is one undoable transaction including view references and
   doc.view.hiddenFields.add('f2')
   doc.view.highlightDupes.add('f2')
   doc.view.colStats.f2 = '已填写数'
-  doc.view.pinnedFieldId = 'f2'
+  doc.view.pinnedFieldIds = ['f1', 'f2']
   const removed = commit(historyState(doc), { type: 'field/delete', id: 'f2' })
   assert.equal(removed.present.rows[0].f2, undefined)
   assert.equal(removed.present.view.groupBy.fieldId, '')
-  assert.equal(removed.present.view.pinnedFieldId, '')
+  assert.deepEqual(removed.present.view.pinnedFieldIds, ['f1'])
   assert.equal(removed.present.view.hiddenFields.size, 0)
   assert.equal(removed.past.length, 1)
   const restored = historyReducer(removed, { type: 'undo' })

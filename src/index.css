@@ -281,16 +281,43 @@
   background: var(--color-primary-soft);
 }
 
-/* The pinned data column sits next to the 40px row-number gutter. */
+/* Sticky, not a scroll listener: the browser keeps these columns still while scrolling.
+   In-flow sticky cells stack under the gutter, so each one is pulled back onto its row. */
 .dsg-cell.dsg-cell-pinned-left {
   position: sticky;
-  left: 40px;
-  margin-left: 40px;
-  transform: translateY(-100%);
   z-index: 30;
-  box-shadow:
-    1px 0 var(--dsg-border-color),
-    0 1px var(--dsg-border-color);
+  background: var(--color-bg);
+  box-shadow: 1px 0 var(--dsg-border-color);
+  transform: translateY(-100%);
+}
+.dsg-row > .dsg-cell.dsg-cell-pinned-left:nth-child(3) {
+  transform: translateY(-200%);
+}
+.dsg-row > .dsg-cell.dsg-cell-pinned-left:nth-child(4) {
+  transform: translateY(-300%);
+}
+.dsg-row > .dsg-cell.dsg-cell-pinned-left:nth-child(5) {
+  transform: translateY(-400%);
+}
+.dsg-row > .dsg-cell.dsg-cell-pinned-left:nth-child(6) {
+  transform: translateY(-500%);
+}
+.dsg-row > .dsg-cell.dsg-cell-pinned-left:nth-child(7) {
+  transform: translateY(-600%);
+}
+.dsg-row > .dsg-cell.dsg-cell-pinned-left:nth-child(8) {
+  transform: translateY(-700%);
+}
+.dsg-row-header .dsg-cell.dsg-cell-pinned-left {
+  z-index: 41;
+}
+.dsg-active-cell.dsg-active-cell-pinned-left,
+.dsg-selection-pinned {
+  translate: var(--dsg-h-scroll, 0px) 0;
+  transition: none;
+}
+.dsg-selection-pinned-span {
+  width: max(var(--pin-width, 0px), calc(var(--sel-width) - var(--dsg-h-scroll, 0px))) !important;
 }
 .dsg-active-cell.dsg-active-cell-pinned-left {
   z-index: 31;

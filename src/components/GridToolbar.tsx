@@ -53,7 +53,7 @@ export default function GridToolbar({
   const t = useT()
   const {
     fields,
-    view: { hiddenFields, pinnedFieldId, rowHeight, filters, groupBy, sorts },
+    view: { hiddenFields, pinnedFieldIds, rowHeight, filters, groupBy, sorts },
   } = table
   return (
     <Flex className={s.toolbar} align="center" justify="space-between" gap="small" wrap>
@@ -64,7 +64,7 @@ export default function GridToolbar({
           hiddenFields={hiddenFields}
           onReorder={onReorder}
           onToggleHide={onToggleHide}
-          pinnedFieldId={pinnedFieldId}
+          pinnedFieldIds={pinnedFieldIds}
           onTogglePin={onTogglePin}
           renderMenu={(field) => renderFieldMenu(field, true)}
         />
