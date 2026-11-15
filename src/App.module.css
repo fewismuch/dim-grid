@@ -72,6 +72,9 @@
   flex: 1 0 48px;
 }
 .footerContent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -110,9 +113,13 @@
   opacity: 1;
 }
 .footerColLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--color-text-muted);
 }
 .footerColVal {
+  flex-shrink: 0;
   color: var(--color-text);
 }
 
