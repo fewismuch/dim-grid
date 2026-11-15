@@ -23,21 +23,10 @@ export default function Demo() {
   }, [locale])
   return (
     <main className="demo-shell">
-      <header className="demo-language-bar">
-        <span>Dim Grid</span>
-        <label htmlFor="demo-language">{locale === 'zh-CN' ? '界面语言' : 'Interface language'}</label>
-        <select
-          id="demo-language"
-          value={locale}
-          onChange={(event) => setLocale(event.target.value === 'en-US' ? 'en-US' : 'zh-CN')}
-        >
-          <option value="zh-CN">简体中文</option>
-          <option value="en-US">English</option>
-        </select>
-      </header>
       <div className="demo-grid">
         <App
           locale={locale}
+          onLocaleChange={setLocale}
           theme={{ token: { colorPrimary: '#00b96b' } }}
           height="100%"
           storageKey="dim-grid.demo"

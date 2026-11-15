@@ -80,6 +80,7 @@ Set `enableLocalStorage={false}` to disable browser storage. The grid then start
 | --- | --- | --- | --- |
 | `initialData` | `{ fields, rows, view? }` | Built-in sample data | Initial grid content; `view` is optional. |
 | `locale` | `'zh-CN' \| 'en-US'` | `'zh-CN'` | Language for the grid UI, Ant Design controls, and date editor. |
+| `onLocaleChange` | `(locale: GridLocale) => void` | — | Enables language options in More actions; the host updates the controlled `locale` in response. |
 | `theme` | Ant Design `ThemeConfig` | — | Theme passed to the grid's internal `ConfigProvider`; grid colors also follow Ant Design tokens. |
 | `enableLocalStorage` | `boolean` | `true` | Whether to read from and write to browser local storage. |
 | `persistTheme` | `boolean` | Same as `enableLocalStorage` | Whether to remember the toolbar's light/dark choice in browser storage. |
@@ -124,4 +125,4 @@ Built with Vite, React, Ant Design, and react-datasheet-grid.
 
 ### Demo language switching
 
-Use the selector above the demo to switch between Simplified Chinese and English. The preference is saved separately and restored on refresh. Switching preserves records, filters, and edit history; field names, options, view names, and record contents are business data and are not translated. Switching still works for the current session if browser storage is blocked. Refreshing still resets the demo data. The library API is unchanged: pass `locale="zh-CN"` or `locale="en-US"` to `DimGrid`.
+Use the language options in the three-dot More actions menu at the top right to switch between Simplified Chinese and English. The preference is saved separately and restored on refresh. Switching preserves records, filters, and edit history; field names, options, view names, and record contents are business data and are not translated. Switching still works for the current session if browser storage is blocked. Refreshing still resets the demo data. The `locale` prop remains controlled. Pass `onLocaleChange` and update `locale` to enable the language menu; omit the callback to hide it.

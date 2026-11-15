@@ -4,7 +4,7 @@ import type { Dispatch, ReactNode, SetStateAction } from 'react'
 import s from '../App.module.css'
 import { type FieldDef, type FilterItem, type GroupByState, newId, type SortItem } from '../constants'
 import type useTableDocument from '../hooks/useTableDocument'
-import { useT } from '../locale'
+import { type GridLocale, useT } from '../locale'
 import type { TableDocument } from '../model/document'
 import BackupControls from './BackupControls'
 import FilterPanel from './FilterPanel'
@@ -16,6 +16,7 @@ import TableSettings from './TableSettings'
 import ViewTitle from './ViewTitle'
 
 type Props = {
+  onLocaleChange?: (locale: GridLocale) => void
   colorMode: 'light' | 'dark'
   onToggleColorMode: () => void
   table: TableDocument
@@ -36,6 +37,7 @@ type Props = {
 export default function GridToolbar({
   colorMode,
   onToggleColorMode,
+  onLocaleChange,
   table,
   recoveryRaw,
   setView,
@@ -102,7 +104,12 @@ export default function GridToolbar({
 
         <SearchPanel onSearch={onSearch} />
 
-        <BackupControls document={table} recoveryRaw={recoveryRaw} onImport={onImport} />
+        <BackupControls
+          document={table}
+          recoveryRaw={recoveryRaw}
+          onImport={onImport}
+          onLocaleChange={onLocaleChange}
+        />
 
         <Tooltip title={t(colorMode === 'dark' ? '切换到浅色主题' : '切换到深色主题')}>
           <Button

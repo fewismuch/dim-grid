@@ -40,6 +40,8 @@ const FieldModal = lazy(() => import('./components/FieldModal'))
 export interface DimGridProps {
   /** UI language; defaults to Simplified Chinese. */
   locale?: GridLocale
+  /** Enables the language menu; the host must update the controlled locale. */
+  onLocaleChange?: (locale: GridLocale) => void
   /** Ant Design theme tokens for controls rendered by the grid. */
   theme?: ThemeConfig
   /** Data used on first mount when this storage key has no saved document. */
@@ -77,6 +79,7 @@ function Grid({
   style,
   colorMode,
   onToggleColorMode,
+  onLocaleChange,
 }: GridProps) {
   const t = useT()
   const { token } = antdTheme.useToken()
@@ -419,6 +422,7 @@ function Grid({
       <GridToolbar
         colorMode={colorMode}
         onToggleColorMode={onToggleColorMode}
+        onLocaleChange={onLocaleChange}
         table={table}
         recoveryRaw={recoveryRaw}
         setView={setView}

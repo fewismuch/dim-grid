@@ -1,6 +1,7 @@
 export type GridLocale = 'zh-CN' | 'en-US'
 
 const english: Record<string, string> = {
+  界面语言: 'Interface language',
   切换到浅色主题: 'Switch to light theme',
   切换到深色主题: 'Switch to dark theme',
   文本: 'Text',

@@ -1,9 +1,10 @@
 import { ExportOutlined, ImportOutlined, MoreOutlined } from '@ant-design/icons'
 import { Button, Dropdown } from 'antd'
 import { lazy, Suspense, useRef, useState } from 'react'
-import { useT } from '../../locale'
+import { type GridLocale, useGridLocale, useT } from '../../locale'
 import type { TableDocument } from '../../model/document'
 import { deserializeDocument, serializeDocument } from '../../model/storage'
+import { languageMenuItems } from './languageMenu'
 
 const BackupDialog = lazy(() => import('../BackupDialog'))
 
@@ -11,12 +12,15 @@ export default function BackupControls({
   document: table,
   onImport,
   recoveryRaw,
+  onLocaleChange,
 }: {
   document: TableDocument
   onImport: (document: TableDocument) => void
   recoveryRaw?: string | null
+  onLocaleChange?: (locale: GridLocale) => void
 }) {
   const t = useT()
+  const locale = useGridLocale()
   const input = useRef<HTMLInputElement>(null)
   const [error, setError] = useState('')
   const [payload, setPayload] = useState<string | null>(null)
@@ -32,6 +36,8 @@ export default function BackupControls({
         trigger={['click']}
         placement="bottomRight"
         menu={{
+          selectable: true,
+          selectedKeys: [`locale:${locale}`],
           items: [
             { key: 'export', label: t('导出备份'), icon: <ExportOutlined />, onClick: () => exportBackup() },
             ...(recoveryRaw
@@ -45,6 +51,7 @@ export default function BackupControls({
                 ]
               : []),
             { key: 'import', label: t('导入备份'), icon: <ImportOutlined />, onClick: () => input.current?.click() },
+            ...languageMenuItems(t('界面语言'), onLocaleChange),
           ],
         }}
       >

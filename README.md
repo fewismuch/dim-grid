@@ -75,7 +75,7 @@ export function RecordsPage() {
 
 如果不需要浏览器本地存储，设置 `enableLocalStorage={false}`。此时组件从 `initialData` 开始，不读取或写入 `localStorage`，编辑内容只保留在当前组件实例中；JSON 导入导出仍然可用。主题偏好默认也不会保存，如需单独保存可设置 `persistTheme`。
 
-演示页顶部可以切换简体中文和 English，语言偏好会单独保存，刷新后保留。切换不会重置当前记录、筛选和编辑历史；字段名、选项、视图名称及记录内容属于业务数据，保持原样。浏览器禁用存储时仍可在当前会话切换语言。演示数据仍在刷新后恢复初始内容。
+演示页右上角三个点的「更多操作」菜单中可以切换简体中文和 English，语言偏好会单独保存，刷新后保留。切换不会重置当前记录、筛选和编辑历史；字段名、选项、视图名称及记录内容属于业务数据，保持原样。浏览器禁用存储时仍可在当前会话切换语言。演示数据仍在刷新后恢复初始内容。
 
 ### 组件属性
 
@@ -83,6 +83,7 @@ export function RecordsPage() {
 | --- | --- | --- | --- |
 | `initialData` | `{ fields, rows, view? }` | 内置示例数据 | 首次挂载时的表格内容；`view` 可选。 |
 | `locale` | `'zh-CN' \| 'en-US'` | `'zh-CN'` | 组件界面、Ant Design 控件和日期编辑器的语言。 |
+| `onLocaleChange` | `(locale: GridLocale) => void` | — | 启用更多操作中的语言选项；宿主收到回调后更新 `locale`。 |
 | `theme` | Ant Design `ThemeConfig` | — | 传给组件内部 `ConfigProvider` 的主题配置；表格颜色也会跟随 Ant Design token。 |
 | `enableLocalStorage` | `boolean` | `true` | 是否读取和保存到浏览器本地存储。 |
 | `persistTheme` | `boolean` | 与 `enableLocalStorage` 相同 | 是否在浏览器本地保存工具栏的明暗主题选择。 |
