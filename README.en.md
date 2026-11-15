@@ -121,3 +121,7 @@ Built with Vite, React, Ant Design, and react-datasheet-grid.
 ## License
 
 [MIT](LICENSE)
+
+### Demo language switching
+
+Use the selector above the demo to switch between Simplified Chinese and English. The preference is saved separately and restored on refresh. Switching preserves records, filters, and edit history; field names, options, view names, and record contents are business data and are not translated. Switching still works for the current session if browser storage is blocked. Refreshing still resets the demo data. The library API is unchanged: pass `locale="zh-CN"` or `locale="en-US"` to `DimGrid`.
